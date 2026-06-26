@@ -12,9 +12,8 @@ find_program(ARM_SIZE arm-none-eabi-size REQUIRED)
 # preprocessed expansion (.i), compiler assembly (.s), object disassembly
 # (.lst) and segment sizes (.size). Compile-only, so cpu is a free axis.
 function(add_matrix variant src)
-	set(hdrs
-		${CMAKE_SOURCE_DIR}/derive/derive.h
-		${CMAKE_SOURCE_DIR}/variants/${variant}/point.h)
+	file(GLOB hdrs ${CMAKE_SOURCE_DIR}/derive/*.h)
+	list(APPEND hdrs ${CMAKE_SOURCE_DIR}/variants/${variant}/shapes.h)
 	foreach(cpu ${MATRIX_CPUS})
 		foreach(opt ${MATRIX_OPTS})
 			set(stem ${MATRIX_DIR}/${variant}.${cpu}.${opt})

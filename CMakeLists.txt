@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(ARM_CPU cortex-m3 CACHE STRING "Cortex-M core for the QEMU test build")
 set(QEMU_MACHINE lm3s6965evb CACHE STRING "QEMU machine for the test run")
-set(VARIANTS derive xmacro hybrid handwritten CACHE STRING "Struct-API implementations to compare")
+set(VARIANTS for hybrid handwritten CACHE STRING "Struct-API implementations to compare")
 
 add_compile_options(-mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion
@@ -27,7 +27,7 @@ include(cmake/cstructs.cmake)
 enable_testing()
 
 foreach(v ${VARIANTS})
-	add_executable(test_${v} tests/test_point.c $<TARGET_OBJECTS:bsp>)
+	add_executable(test_${v} tests/test_shapes.c $<TARGET_OBJECTS:bsp>)
 	target_include_directories(test_${v} PRIVATE derive variants/${v})
 	add_test(NAME ${v}
 		COMMAND ${QEMU} -M ${QEMU_MACHINE} -nographic -semihosting

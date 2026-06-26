@@ -53,12 +53,15 @@ axis is free to range over parts that no QEMU machine models.
 
 and a `text`-size comparison table to stdout and `build/matrix/report.md`.
 
-The seeded `Point` already shows the result: all three derive styles produce
-byte-for-byte identical code to the hand-written version from `-O1` up
-(`diff build/matrix/derive.*.O2.s build/matrix/handwritten.*.O2.s` is empty). At
-`-O0` only `xmacro` differs (+2 bytes) — its constructor workaround passes a
-sacrificial argument the others avoid. `Debug` pulls in `snprintf` in every
-variant; it is the one derive whose cost is real, kept for contrast.
+The seeded `Point`/`Line`/`Frame` already show the result: both derive styles
+(`for`, `hybrid`) produce **byte-identical** code to the hand-written baseline at
+every optimization level, including the recursive nested `Frame` (`diff
+build/matrix/for.*.O2.s build/matrix/hybrid.*.O2.s` is empty, likewise vs
+`handwritten`). `Debug` is the one capability with real cost — it pulls in
+`snprintf` everywhere — kept for contrast. Reaching parity required the generated
+constructors to take `const` by-value parameters; without it a nested struct
+field forces a defensive copy — caught by the matrix at `-O1+`, not the `-O0`
+tests.
 
 ### Sweeping the axes
 
@@ -96,15 +99,16 @@ uv run pytest     # units + doctests
 
 ## Adding to the bench
 
-- **Another implementation to compare:** add `variants/<name>/point.h` exposing
-  the same `Point` API, then append `<name>` to `-DVARIANTS=...`. It
-  automatically gains a QEMU test and matrix rows.
-- **Another deriveable type:** give it a `T_FIELDS` macro and the `DERIVE_*`
-  calls (see [variants/derive/point.h](variants/derive/point.h)), then exercise
-  it from [study/study.c](study/study.c) and [tests/test_point.c](tests/test_point.c).
-- **Another derive:** add a generator to [derive/derive.h](derive/derive.h). The
-  `FOR_EACH` / `FOR_EACH_C` mappers (comma-free and comma-separated) handle the
-  field iteration.
+- **Another implementation to compare:** add `variants/<name>/shapes.h` exposing
+  the same type API, then append `<name>` to `-DVARIANTS=...`. It automatically
+  gains a QEMU test and matrix rows.
+- **Another deriveable type:** give it a `T_FIELDS` list and the `DERIVE_*` calls
+  in each impl's [variants/](variants/) header, then exercise it from
+  [study/study.c](study/study.c) and [tests/test_shapes.c](tests/test_shapes.c).
+- **Another derive (or requirement):** add a generator to both
+  [derive/derive_for.h](derive/derive_for.h) and
+  [derive/derive_hybrid.h](derive/derive_hybrid.h). Keeping the two 1:1 *is* the
+  experiment — pile on requirements until one approach loses viability.
 
 ## Layout
 
@@ -121,13 +125,11 @@ cmake/python/             uv project `cstructs`: the typed string transforms
   src/cstructs/cli.py       thin cyclopts shims that CMake invokes
   tests/                    pytest units (+ doctests in the modules)
 bsp/                      bare-metal harness: vector table, semihosting, linker
-derive/                   three derive frameworks, one Point API:
-  derive.h                  FOR_EACH / __VA_OPT__ unroll (comma-tuple fields)
-  derive_xmacro.h           classic operator-threaded X-macro (+ ctor shim)
-  derive_hybrid.h           classic + DROP1 leading-comma strip for `new`
-variants/<name>/point.h   derive | xmacro | hybrid | handwritten — under comparison
+derive/                   two feature-equal derive frameworks (same type API):
+  derive_for.h              FOR_EACH / __VA_OPT__ unroll (comma-tuple fields)
+  derive_hybrid.h           classic operator-threaded + DROP1 (no field-count cap)
+variants/<impl>/shapes.h  for | hybrid | handwritten — Point/Line/Frame, compared
 study/study.c             stable entry points so the codegen is emitted
-study/study.c             stable entry points so the codegen is emitted
-tests/test_point.c        correctness checks, run under QEMU per variant
+tests/test_shapes.c       correctness + sizing/truncation, run under QEMU per impl
 .clangd .vscode/ .envrc   IDE: clangd over build/compile_commands.json
 ```
