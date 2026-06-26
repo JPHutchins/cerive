@@ -4,7 +4,11 @@ A test bench for emulating Rust's `#[derive(...)]` in embedded C23 with X-macros
 and for gathering **codegen evidence** about whether that abstraction is free.
 
 A "deriveable" type is described once by a field list; generator macros expand it
-into the struct plus its methods (`Debug`, `new`, `Default`, `PartialEq`). The
+into the struct plus its methods (`Debug`, `new`, `Default`, `PartialEq`).
+Tagged unions are derived the same way from a variant list, where each tag
+constant deliberately shares the spelling of its union member and member struct
+(three C namespaces) so construction and matching are pure token reuse — which is
+why the structs are **not** `typedef`'d (refer to them as `struct T`). The
 harness then (a) proves each derive is **correct** by running it on ARM under
 QEMU, and (b) emits a **comparison matrix** — preprocessed expansion, assembly,
 disassembly and segment sizes — for the derived code versus a hand-written
@@ -116,6 +120,31 @@ uv run pytest     # units + doctests
   [derive/derive_hybrid.h](derive/derive_hybrid.h). Keeping the two 1:1 *is* the
   experiment — pile on requirements until one approach loses viability.
 
+## Tagged unions
+
+A sum is a variant list whose tags are its member struct names:
+
+```c
+#define Shape_VARIANTS Point, Line, Frame      /* derive_for; hybrid: (X) X(Point)... */
+DERIVE_SUM(Shape);
+DERIVE_SUM_DEBUG(Shape)
+DERIVE_SUM_PARTIAL_EQ(Shape)
+```
+
+This generates `enum Shape_tag`, the anonymous `union` + `tag`, and
+`Shape_debug` / `Shape_eq` that `switch` on the tag and recurse into each
+variant's derive. The generic helpers in [derive/sum.h](derive/sum.h) exploit
+tag ≡ member ≡ struct name:
+
+```c
+struct Shape s = SUM_NEW(Shape, Point, .x = 1, .y = 2);   /* construct */
+if (SUM_IS(s, Point)) { /* ... */ }                       /* predicate  */
+SUM_MATCH (s) {                                            /* type-safe match */
+    SUM_CASE (s, Point, p) { use(p->x); }   /* p is `struct Point const *` */
+    SUM_CASE (s, Frame, f) { use(f->id); }  /* wrong-field access won't compile */
+}
+```
+
 ## Layout
 
 ```
@@ -134,6 +163,7 @@ bsp/                      bare-metal harness: vector table, semihosting, linker
 derive/                   two feature-equal derive frameworks (same type API):
   derive_for.h              FOR_EACH / __VA_OPT__ unroll (comma-tuple fields)
   derive_hybrid.h           classic operator-threaded + DROP1 (no field-count cap)
+  sum.h                     generic tagged-union helpers (SUM_NEW/IS/MATCH/CASE)
 variants/<impl>/shapes.h  for | hybrid | handwritten — Point/Line/Frame, compared
 study/study.c             stable entry points so the codegen is emitted
 tests/test_shapes.c       correctness + sizing/truncation, run under QEMU per impl
