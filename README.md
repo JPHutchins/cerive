@@ -47,11 +47,17 @@ axis is free to range over parts that no QEMU machine models.
 | file | contents |
 |---|---|
 | `*.i` | macro expansion ([study/study.c](study/study.c)), system headers stripped |
-| `*.s` | compiler assembly |
-| `*.lst` | object disassembly (`objdump -d -S`) |
-| `*.size` | `text` / `data` / `bss` |
+| `*.s` | compiler assembly (the diff source) |
+| `*.lst` | object disassembly (`objdump -d -S`) — for browsing, not diffing |
+| `*.size` | whole-TU `text` / `data` / `bss` |
+| `*.sym` | per-function sizes (`nm --print-size`) |
 
-and a `text`-size comparison table to stdout and `build/matrix/report.md`.
+and `build/matrix/report.md`: a top verdict (`for ≡ hybrid`? `≡ handwritten`?), a
+per-function **equivalence grid** (`=` identical asm · `+N` Δbytes vs baseline ·
+`⚠` candidates disagree), and, for any divergent cell, a **normalized unified
+asm diff** (helper names and local labels neutralized so only real codegen
+differences show). The comparison logic lives in the typed, tested
+[cstructs.asm](cmake/python/src/cstructs/asm.py) / `report` modules.
 
 The seeded `Point`/`Line`/`Frame` already show the result: both derive styles
 (`for`, `hybrid`) produce **byte-identical** code to the hand-written baseline at

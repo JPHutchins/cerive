@@ -7,6 +7,7 @@ file(MAKE_DIRECTORY ${MATRIX_DIR})
 find_program(ASTYLE astyle)
 find_program(ARM_OBJDUMP arm-none-eabi-objdump REQUIRED)
 find_program(ARM_SIZE arm-none-eabi-size REQUIRED)
+find_program(ARM_NM arm-none-eabi-nm REQUIRED)
 
 # add_matrix(<variant> <source>): for every (cpu, opt) cell, emit the
 # preprocessed expansion (.i), compiler assembly (.s), object disassembly
@@ -47,9 +48,12 @@ function(add_matrix variant src)
 			add_custom_command(OUTPUT ${stem}.size
 				COMMAND ${CSTRUCTS} capture --out ${stem}.size -- ${ARM_SIZE} ${stem}.o
 				DEPENDS ${stem}.o ${CSTRUCTS_SRCS} ${CSTRUCTS_STAMP} VERBATIM)
+			add_custom_command(OUTPUT ${stem}.sym
+				COMMAND ${CSTRUCTS} capture --out ${stem}.sym -- ${ARM_NM} --print-size --defined-only ${stem}.o
+				DEPENDS ${stem}.o ${CSTRUCTS_SRCS} ${CSTRUCTS_STAMP} VERBATIM)
 
 			set_property(GLOBAL APPEND PROPERTY C_STRUCTS_MATRIX_OUTPUTS
-				${stem}.i ${stem}.s ${stem}.lst ${stem}.size)
+				${stem}.i ${stem}.s ${stem}.lst ${stem}.size ${stem}.sym)
 		endforeach()
 	endforeach()
 endfunction()
