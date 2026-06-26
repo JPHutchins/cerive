@@ -1,0 +1,27 @@
+[project]
+name = "cstructs"
+version = "0.0.0"
+description = "Pure, statically-typed string transforms invoked by CMake"
+requires-python = ">=3.14"
+dependencies = ["cyclopts>=3"]
+
+[project.scripts]
+cstructs = "cstructs.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["mypy>=1.13", "pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cstructs"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+testpaths = ["src", "tests"]
