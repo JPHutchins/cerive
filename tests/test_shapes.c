@@ -1,74 +1,128 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "shapes.h"
 
-#define CHECK(cond)                                                  \
-	do {                                                             \
-		if (!(cond)) {                                               \
-			printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond);  \
-			++fails;                                                 \
-		}                                                            \
+#define CHECK(cond) \
+	do { \
+		if (!(cond)) { \
+			++fails; \
+			printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); \
+		} \
 	} while (0)
 
-int main(void) {
+static int flat_struct(void) {
 	int fails = 0;
 
-	/* flat */
-	struct Point const p = Point_new(1, 2);
-	CHECK(p.x == 1 && p.y == 2);
+	Point const p = Point_new(3, 4);
+	CHECK(p.x == 3 && p.y == 4);
+
 	CHECK(Point_default().x == 0 && Point_default().y == 0);
-	CHECK(Point_eq(&p, &(struct Point){.x = 1, .y = 2}));
-	CHECK(!Point_eq(&p, &(struct Point){.x = 9, .y = 9}));
-	char pb[32];
-	Point_debug(&p, pb, sizeof pb);
-	CHECK(strcmp(pb, "Point { x=1 y=2 }") == 0);
 
-	/* nested: Frame -> Line -> Point */
-	struct Frame const f = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
+	CHECK(Point_eq(&p, &(Point){.x = 3, .y = 4}));
+	CHECK(!Point_eq(&p, &(Point){.x = 3, .y = 5}));
+
+	char buf[32];
+	Point_debug(&p, buf, sizeof buf);
+	CHECK(strcmp(buf, "Point { x=3 y=4 }") == 0);
+
+	return fails;
+}
+
+static int nested_composition(void) {
+	int fails = 0;
+
+	Frame const f = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
 	CHECK(f.edge.a.x == 1 && f.edge.b.y == 4 && f.id == 7);
-	struct Frame const z = Frame_default();
-	CHECK(z.edge.a.x == 0 && z.id == 0);
-	CHECK(Frame_eq(&f, &(struct Frame){.edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7}));
-	CHECK(!Frame_eq(&f, &z));
 
-	char const *const frame_str =
-		"Frame { edge=Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } } id=7 }";
+	Frame const same = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
+	CHECK(Frame_eq(&f, &same));
+	CHECK(!Frame_eq(&f, &(Frame){}));
+
+	Frame const zero = Frame_default();
+	CHECK(zero.edge.a.x == 0 && zero.edge.b.y == 0 && zero.id == 0);
+
 	char buf[128];
-	int const need = Frame_debug(&f, buf, sizeof buf);
-	puts(buf);
-	CHECK(strcmp(buf, frame_str) == 0);
-	CHECK(need == (int) strlen(frame_str));
-	CHECK(Frame_debug(&f, NULL, 0) == need);
+	Frame_debug(&f, buf, sizeof buf);
+	CHECK(strcmp(buf, "Frame { edge=Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } } id=7 }") == 0);
 
-	char small[10];
-	int const need2 = Frame_debug(&f, small, sizeof small);
-	CHECK(need2 == need);
-	CHECK(strlen(small) == sizeof small - 1);
-	CHECK(strncmp(small, frame_str, sizeof small - 1) == 0);
+	return fails;
+}
 
-	/* tagged union: tag constant == union member == struct name */
-	struct Shape const sp = SUM_NEW(Shape, Point, .x = 1, .y = 2);
-	CHECK(SUM_IS(sp, Point) && sp.Point.x == 1 && sp.Point.y == 2);
-	struct Shape const sf = SUM_NEW(Shape, Frame, .edge = f.edge, .id = f.id);
-	CHECK(SUM_IS(sf, Frame) && sf.Frame.id == 7);
+static int debug_buffer_contract(void) {
+	int fails = 0;
 
-	char sb[128];
-	Shape_debug(&sp, sb, sizeof sb);
-	CHECK(strcmp(sb, "Point { x=1 y=2 }") == 0);
-	Shape_debug(&sf, sb, sizeof sb);
-	CHECK(strcmp(sb, frame_str) == 0);
+	Point const p = Point_new(42, 7);
+	char const *const expect = "Point { x=42 y=7 }";
+	int const need = (int) strlen(expect);
 
-	CHECK(Shape_eq(&sp, &SUM_NEW(Shape, Point, .x = 1, .y = 2)));
-	CHECK(!Shape_eq(&sp, &sf));
+	CHECK(Point_debug(&p, NULL, 0) == need);
 
-	int matched = 0;
-	SUM_MATCH (sp) {
-		SUM_CASE (sp, Point, it) { matched = it->x; }
-		SUM_CASE (sp, Line, it) { (void) it; matched = -1; }
-		SUM_CASE (sp, Frame, it) { (void) it; matched = -1; }
+	char full[32];
+	CHECK(Point_debug(&p, full, sizeof full) == need);
+	CHECK(strcmp(full, expect) == 0);
+
+	char truncated[8];
+	CHECK(Point_debug(&p, truncated, sizeof truncated) == need);
+	CHECK(strlen(truncated) == sizeof truncated - 1);
+	CHECK(strncmp(truncated, expect, sizeof truncated - 1) == 0);
+
+	return fails;
+}
+
+static int sum_construct_and_compare(void) {
+	int fails = 0;
+
+	Shape const point = SUM_NEW(Shape, Point, .x = 1, .y = 2);
+	Shape const frame = SUM_NEW(Shape, Frame, .edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7);
+
+	CHECK(SUM_IS(point, Point) && !SUM_IS(point, Frame));
+	CHECK(point.Point.x == 1 && frame.Frame.id == 7);
+
+	CHECK(Shape_eq(&point, &SUM_NEW(Shape, Point, .x = 1, .y = 2)));
+	CHECK(!Shape_eq(&point, &SUM_NEW(Shape, Point, .x = 9, .y = 9)));
+	CHECK(!Shape_eq(&point, &frame));
+
+	char buf[128];
+	Shape_debug(&point, buf, sizeof buf);
+	CHECK(strcmp(buf, "Point { x=1 y=2 }") == 0);
+	Shape_debug(&frame, buf, sizeof buf);
+	CHECK(strcmp(buf, "Frame { edge=Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } } id=7 }") == 0);
+
+	return fails;
+}
+
+static int sum_match(void) {
+	int fails = 0;
+
+	Shape const shapes[] = {
+		SUM_NEW(Shape, Point, .x = 5, .y = 6),
+		SUM_NEW(Shape, Line, .a = Point_new(1, 0), .b = Point_new(0, 0)),
+		SUM_NEW(Shape, Frame, .edge = Line_default(), .id = 9),
+	};
+	int32_t const want[] = {5, 1, 9};
+
+	for (size_t i = 0; i < sizeof shapes / sizeof shapes[0]; ++i) {
+		int32_t got = -1;
+		SUM_MATCH (shapes[i]) {
+			SUM_CASE (shapes[i], Point, p) { got = p->x; }
+			SUM_CASE (shapes[i], Line, l) { got = l->a.x; }
+			SUM_CASE (shapes[i], Frame, f) { got = f->id; }
+		}
+		CHECK(got == want[i]);
 	}
-	CHECK(matched == 1);
+
+	return fails;
+}
+
+int main(void) {
+	int const fails =
+		flat_struct()
+		+ nested_composition()
+		+ debug_buffer_contract()
+		+ sum_construct_and_compare()
+		+ sum_match();
 
 	puts(fails == 0 ? "all tests passed" : "FAILURES");
 	return fails;

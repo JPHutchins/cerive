@@ -5,10 +5,10 @@ and for gathering **codegen evidence** about whether that abstraction is free.
 
 A "deriveable" type is described once by a field list; generator macros expand it
 into the struct plus its methods (`Debug`, `new`, `Default`, `PartialEq`).
-Tagged unions are derived the same way from a variant list, where each tag
-constant deliberately shares the spelling of its union member and member struct
-(three C namespaces) so construction and matching are pure token reuse — which is
-why the structs are **not** `typedef`'d (refer to them as `struct T`). The
+Tagged unions are derived the same way from a variant list, where each variant
+token names its union member and member struct, plus a `_tag`-suffixed enum
+discriminant (three C namespaces) so construction and matching are pure token
+reuse while the field structs stay `typedef`'d. The
 harness then (a) proves each derive is **correct** by running it on ARM under
 QEMU, and (b) emits a **comparison matrix** — preprocessed expansion, assembly,
 disassembly and segment sizes — for the derived code versus a hand-written

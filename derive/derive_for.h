@@ -9,9 +9,7 @@
 /*
  * FOR_EACH derives. The field list is data -- comma-separated tuples mapped over
  * by a __VA_OPT__ recursion. Fields are tagged SCALAR or STRUCT; struct fields
- * compose by value and Debug / PartialEq recurse into the inner type. Structs
- * are emitted without a typedef (refer to them as `struct T`) so a sum's tag
- * constant can share a member struct's name -- see sum.h.
+ * compose by value and Debug / PartialEq recurse into the inner type.
  *
  * Feature-equal to derive_hybrid.h. FOR_EACH_C yields a comma-separated, no-
  * trailing-comma parameter list (so no DROP1), but the EXPAND nesting caps the
@@ -44,31 +42,31 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define FOR_DECL(f) FOR_DECL2 f
 #define FOR_DECL2(kind, ...) FOR_DECL_##kind(__VA_ARGS__)
 #define FOR_DECL_SCALAR(type, name, fmt) type name;
-#define FOR_DECL_STRUCT(type, name) struct type name;
-#define DERIVE_STRUCT(T) struct T {FOR_EACH(FOR_DECL, T##_FIELDS)}
+#define FOR_DECL_STRUCT(type, name) type name;
+#define DERIVE_STRUCT(T) typedef struct T {FOR_EACH(FOR_DECL, T##_FIELDS)} T
 
 #define FOR_PARAM(f) FOR_PARAM2 f
 #define FOR_PARAM2(kind, ...) FOR_PARAM_##kind(__VA_ARGS__)
 #define FOR_PARAM_SCALAR(type, name, fmt) type const name
-#define FOR_PARAM_STRUCT(type, name) struct type const name
+#define FOR_PARAM_STRUCT(type, name) type const name
 #define FOR_INIT(f) FOR_INIT2 f
 #define FOR_INIT2(kind, ...) FOR_INIT_##kind(__VA_ARGS__)
 #define FOR_INIT_SCALAR(type, name, fmt) .name = name
 #define FOR_INIT_STRUCT(type, name) .name = name
 #define DERIVE_NEW(T) \
-	static inline struct T T##_new(FOR_EACH_C(FOR_PARAM, T##_FIELDS)) { \
-		return (struct T){FOR_EACH_C(FOR_INIT, T##_FIELDS)}; \
+	static inline T T##_new(FOR_EACH_C(FOR_PARAM, T##_FIELDS)) { \
+		return (T){FOR_EACH_C(FOR_INIT, T##_FIELDS)}; \
 	}
 
 #define DERIVE_DEFAULT(T) \
-	static inline struct T T##_default(void) { return (struct T){}; }
+	static inline T T##_default(void) { return (T){}; }
 
 #define FOR_EQ(f) FOR_EQ2 f
 #define FOR_EQ2(kind, ...) FOR_EQ_##kind(__VA_ARGS__)
 #define FOR_EQ_SCALAR(type, name, fmt) &&a->name == b->name
 #define FOR_EQ_STRUCT(type, name) &&type##_eq(&a->name, &b->name)
 #define DERIVE_PARTIAL_EQ(T) \
-	static inline bool T##_eq(struct T const *const a, struct T const *const b) { \
+	static inline bool T##_eq(T const *const a, T const *const b) { \
 		return true FOR_EACH(FOR_EQ, T##_FIELDS); \
 	}
 
@@ -81,7 +79,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 	off += type##_debug(&self->name, derive_at(buf, n, off), derive_rem(n, off)); \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), " ");
 #define DERIVE_DEBUG(T) \
-	static inline int T##_debug(struct T const *const self, char *const buf, size_t const n) { \
+	static inline int T##_debug(T const *const self, char *const buf, size_t const n) { \
 		int off = 0; \
 		off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #T " { "); \
 		FOR_EACH(FOR_DBG, T##_FIELDS) \
