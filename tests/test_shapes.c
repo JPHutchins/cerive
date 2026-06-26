@@ -71,17 +71,17 @@ static int debug_buffer_contract(void) {
 	return fails;
 }
 
-static int sum_construct_and_compare(void) {
+static int union_construct_and_compare(void) {
 	int fails = 0;
 
-	Shape const point = SUM_NEW(Shape, Point, .x = 1, .y = 2);
-	Shape const frame = SUM_NEW(Shape, Frame, .edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7);
+	Shape const point = Shape_new(Point, .x = 1, .y = 2);
+	Shape const frame = Shape_new(Frame, .edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7);
 
-	CHECK(SUM_IS(point, Point) && !SUM_IS(point, Frame));
+	CHECK(UNION_IS(point, Point) && !UNION_IS(point, Frame));
 	CHECK(point.Point.x == 1 && frame.Frame.id == 7);
 
-	CHECK(Shape_eq(&point, &SUM_NEW(Shape, Point, .x = 1, .y = 2)));
-	CHECK(!Shape_eq(&point, &SUM_NEW(Shape, Point, .x = 9, .y = 9)));
+	CHECK(Shape_eq(&point, &Shape_new(Point, .x = 1, .y = 2)));
+	CHECK(!Shape_eq(&point, &Shape_new(Point, .x = 9, .y = 9)));
 	CHECK(!Shape_eq(&point, &frame));
 
 	char buf[128];
@@ -93,22 +93,22 @@ static int sum_construct_and_compare(void) {
 	return fails;
 }
 
-static int sum_match(void) {
+static int union_match(void) {
 	int fails = 0;
 
 	Shape const shapes[] = {
-		SUM_NEW(Shape, Point, .x = 5, .y = 6),
-		SUM_NEW(Shape, Line, .a = Point_new(1, 0), .b = Point_new(0, 0)),
-		SUM_NEW(Shape, Frame, .edge = Line_default(), .id = 9),
+		Shape_new(Point, .x = 5, .y = 6),
+		Shape_new(Line, .a = Point_new(1, 0), .b = Point_new(0, 0)),
+		Shape_new(Frame, .edge = Line_default(), .id = 9),
 	};
 	int32_t const want[] = {5, 1, 9};
 
 	for (size_t i = 0; i < sizeof shapes / sizeof shapes[0]; ++i) {
 		int32_t got = -1;
-		SUM_MATCH (shapes[i]) {
-			SUM_CASE (shapes[i], Point, p) { got = p->x; }
-			SUM_CASE (shapes[i], Line, l) { got = l->a.x; }
-			SUM_CASE (shapes[i], Frame, f) { got = f->id; }
+		MATCH (shapes[i]) {
+			CASE (Point, p) { got = p->x; }
+			CASE (Line, l) { got = l->a.x; }
+			CASE (Frame, f) { got = f->id; }
 		}
 		CHECK(got == want[i]);
 	}
@@ -121,8 +121,8 @@ int main(void) {
 		flat_struct()
 		+ nested_composition()
 		+ debug_buffer_contract()
-		+ sum_construct_and_compare()
-		+ sum_match();
+		+ union_construct_and_compare()
+		+ union_match();
 
 	puts(fails == 0 ? "all tests passed" : "FAILURES");
 	return fails;

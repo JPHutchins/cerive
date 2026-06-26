@@ -122,26 +122,28 @@ uv run pytest     # units + doctests
 
 ## Tagged unions
 
-A sum is a variant list whose tags are its member struct names:
+A union is a variant list whose members are its member struct types:
 
 ```c
 #define Shape_VARIANTS Point, Line, Frame      /* derive_for; hybrid: (X) X(Point)... */
-DERIVE_SUM(Shape);
-DERIVE_SUM_DEBUG(Shape)
-DERIVE_SUM_PARTIAL_EQ(Shape)
+DERIVE_UNION(Shape);
+DERIVE_UNION_DEBUG(Shape)
+DERIVE_UNION_PARTIAL_EQ(Shape)
+#define Shape_new(...) UNION_NEW(Shape, __VA_ARGS__)
 ```
 
-This generates `enum Shape_tag`, the anonymous `union` + `tag`, and
-`Shape_debug` / `Shape_eq` that `switch` on the tag and recurse into each
-variant's derive. The generic helpers in [derive/sum.h](derive/sum.h) exploit
-tag ≡ member ≡ struct name:
+This generates `enum Shape_tag` (discriminants `Point_tag`, …), the anonymous
+`union` + `tag`, and `Shape_debug` / `Shape_eq` that `switch` on the tag and
+recurse into each variant's derive. The helpers in [derive/union.h](derive/union.h)
+exploit member ≡ struct name, with a `_tag`-suffixed discriminant pasted by the
+macros (so you always pass the bare token):
 
 ```c
-struct Shape s = SUM_NEW(Shape, Point, .x = 1, .y = 2);   /* construct */
-if (SUM_IS(s, Point)) { /* ... */ }                       /* predicate  */
-SUM_MATCH (s) {                                            /* type-safe match */
-    SUM_CASE (s, Point, p) { use(p->x); }   /* p is `struct Point const *` */
-    SUM_CASE (s, Frame, f) { use(f->id); }  /* wrong-field access won't compile */
+Shape s = Shape_new(Point, .x = 1, .y = 2);   /* construct */
+if (UNION_IS(s, Point)) { /* ... */ }          /* predicate  */
+MATCH (s) {                                    /* type-safe match */
+    CASE (Point, p) { use(p->x); }   /* p is `Point const *`, bound from s */
+    CASE (Frame, f) { use(f->id); }  /* wrong-field access won't compile */
 }
 ```
 
@@ -163,7 +165,7 @@ bsp/                      bare-metal harness: vector table, semihosting, linker
 derive/                   two feature-equal derive frameworks (same type API):
   derive_for.h              FOR_EACH / __VA_OPT__ unroll (comma-tuple fields)
   derive_hybrid.h           classic operator-threaded + DROP1 (no field-count cap)
-  sum.h                     generic tagged-union helpers (SUM_NEW/IS/MATCH/CASE)
+  union.h                   generic tagged-union helpers (UNION_NEW/IS, MATCH/CASE)
 variants/<impl>/shapes.h  for | hybrid | handwritten — Point/Line/Frame, compared
 study/study.c             stable entry points so the codegen is emitted
 tests/test_shapes.c       correctness + sizing/truncation, run under QEMU per impl

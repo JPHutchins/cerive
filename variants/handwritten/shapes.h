@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "sum.h"
+#include "union.h"
 
 /* Baseline: the same API a careful engineer would write by hand -- offset-cursor
  * Debug, recursive composition, switch-dispatched sum -- to diff the derives
@@ -113,3 +113,5 @@ static inline bool Shape_eq(Shape const *const a, Shape const *const b) {
 	}
 	unreachable();
 }
+
+#define Shape_new(...) UNION_NEW(Shape, __VA_ARGS__)

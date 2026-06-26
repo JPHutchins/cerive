@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "sum.h"
+#include "union.h"
 
 /*
  * FOR_EACH derives. The field list is data -- comma-separated tuples mapped over
@@ -37,7 +37,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define FOR_EACH_C_(m, a, ...) m(a) __VA_OPT__(, FOR_EACH_C_AGAIN PARENS(m, __VA_ARGS__))
 #define FOR_EACH_C_AGAIN() FOR_EACH_C_
 
-#define SUM_OVER(m, T) FOR_EACH(m, T##_VARIANTS)
+#define UNION_OVER(m, T) FOR_EACH(m, T##_VARIANTS)
 
 #define FOR_DECL(f) FOR_DECL2 f
 #define FOR_DECL2(kind, ...) FOR_DECL_##kind(__VA_ARGS__)

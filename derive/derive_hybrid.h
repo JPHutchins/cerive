@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "sum.h"
+#include "union.h"
 
 /*
  * Hybrid derives. Classic operator-threaded `T##_FIELDS(X)` -- one macro per
@@ -25,7 +25,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define DERIVE_DROP1(...) DERIVE_DROP1_(__VA_ARGS__)
 #define DERIVE_DROP1_(first, ...) __VA_ARGS__
 
-#define SUM_OVER(m, T) T##_VARIANTS(m)
+#define UNION_OVER(m, T) T##_VARIANTS(m)
 
 #define HY_DECL(kind, ...) HY_DECL_##kind(__VA_ARGS__)
 #define HY_DECL_SCALAR(type, name, fmt) type name;

@@ -27,6 +27,7 @@ DERIVE_DEFAULT(Frame)
 DERIVE_PARTIAL_EQ(Frame)
 
 #define Shape_VARIANTS(X) X(Point) X(Line) X(Frame)
-DERIVE_SUM(Shape);
-DERIVE_SUM_DEBUG(Shape)
-DERIVE_SUM_PARTIAL_EQ(Shape)
+DERIVE_UNION(Shape);
+DERIVE_UNION_DEBUG(Shape)
+DERIVE_UNION_PARTIAL_EQ(Shape)
+#define Shape_new(...) UNION_NEW(Shape, __VA_ARGS__)
