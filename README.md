@@ -235,3 +235,7 @@ study/study.c             stable entry points so the codegen is emitted
 tests/test_shapes.c       correctness + sizing/truncation, run under QEMU per impl
 .clangd .vscode/ .envrc   IDE: clangd over build/compile_commands.json
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
