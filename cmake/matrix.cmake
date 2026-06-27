@@ -13,7 +13,7 @@ find_program(ARM_NM arm-none-eabi-nm REQUIRED)
 # preprocessed expansion (.i), compiler assembly (.s), object disassembly
 # (.lst) and segment sizes (.size). Compile-only, so cpu is a free axis.
 function(add_matrix variant src)
-	file(GLOB hdrs ${CMAKE_SOURCE_DIR}/derive/*.h)
+	file(GLOB hdrs ${CMAKE_SOURCE_DIR}/include/cerive/*.h)
 	list(APPEND hdrs ${CMAKE_SOURCE_DIR}/variants/${variant}/shapes.h)
 	foreach(cpu ${MATRIX_CPUS})
 		foreach(opt ${MATRIX_OPTS})
@@ -22,7 +22,7 @@ function(add_matrix variant src)
 				-Wall -Wextra -Werror -Wdouble-promotion
 				-mcpu=${cpu} -mthumb -${opt}
 				-ffunction-sections -fdata-sections
-				-I${CMAKE_SOURCE_DIR}/derive
+				-I${CMAKE_SOURCE_DIR}/include
 				-I${CMAKE_SOURCE_DIR}/variants/${variant})
 
 			if(ASTYLE)

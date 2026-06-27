@@ -6,9 +6,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "hash.h"
-#include "ord.h"
-#include "union.h"
+#include <cerive/hash.h>
+#include <cerive/ord.h>
+#include <cerive/union.h>
 
 /* Baseline: the same API a careful engineer would write by hand -- offset-cursor
  * Debug, recursive composition, switch-dispatched sum -- to diff the derives
@@ -38,25 +38,25 @@ static inline Point Point_default(void) { return (Point){}; }
 static inline bool Point_eq(Point const *const a, Point const *const b) {
 	return a->x == b->x && a->y == b->y;
 }
-static inline enum ordering Point_cmp(Point const *const a, Point const *const b) {
+static inline enum cerive_ordering Point_cmp(Point const *const a, Point const *const b) {
 	{
-		enum ordering const o = (a->x > b->x) - (a->x < b->x);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->x > b->x) - (a->x < b->x);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = (a->y > b->y) - (a->y < b->y);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->y > b->y) - (a->y < b->y);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
-	return ordering_equal;
+	return cerive_equal;
 }
 static inline size_t Point_hash(Point const *const self) {
-	size_t h = hash_offset;
-	h = hash_bytes(h, &self->x, sizeof self->x);
-	h = hash_bytes(h, &self->y, sizeof self->y);
+	size_t h = cerive_hash_offset;
+	h = cerive_hash_bytes(h, &self->x, sizeof self->x);
+	h = cerive_hash_bytes(h, &self->y, sizeof self->y);
 	return h;
 }
 
@@ -81,25 +81,25 @@ static inline Line Line_default(void) { return (Line){}; }
 static inline bool Line_eq(Line const *const a, Line const *const b) {
 	return Point_eq(&a->a, &b->a) && Point_eq(&a->b, &b->b);
 }
-static inline enum ordering Line_cmp(Line const *const a, Line const *const b) {
+static inline enum cerive_ordering Line_cmp(Line const *const a, Line const *const b) {
 	{
-		enum ordering const o = Point_cmp(&a->a, &b->a);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = Point_cmp(&a->a, &b->a);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = Point_cmp(&a->b, &b->b);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = Point_cmp(&a->b, &b->b);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
-	return ordering_equal;
+	return cerive_equal;
 }
 static inline size_t Line_hash(Line const *const self) {
-	size_t h = hash_offset;
-	h = hash_mix(h, Point_hash(&self->a));
-	h = hash_mix(h, Point_hash(&self->b));
+	size_t h = cerive_hash_offset;
+	h = cerive_hash_mix(h, Point_hash(&self->a));
+	h = cerive_hash_mix(h, Point_hash(&self->b));
 	return h;
 }
 
@@ -122,25 +122,25 @@ static inline Frame Frame_default(void) { return (Frame){}; }
 static inline bool Frame_eq(Frame const *const a, Frame const *const b) {
 	return Line_eq(&a->edge, &b->edge) && a->id == b->id;
 }
-static inline enum ordering Frame_cmp(Frame const *const a, Frame const *const b) {
+static inline enum cerive_ordering Frame_cmp(Frame const *const a, Frame const *const b) {
 	{
-		enum ordering const o = Line_cmp(&a->edge, &b->edge);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = Line_cmp(&a->edge, &b->edge);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = (a->id > b->id) - (a->id < b->id);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->id > b->id) - (a->id < b->id);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
-	return ordering_equal;
+	return cerive_equal;
 }
 static inline size_t Frame_hash(Frame const *const self) {
-	size_t h = hash_offset;
-	h = hash_mix(h, Line_hash(&self->edge));
-	h = hash_bytes(h, &self->id, sizeof self->id);
+	size_t h = cerive_hash_offset;
+	h = cerive_hash_mix(h, Line_hash(&self->edge));
+	h = cerive_hash_bytes(h, &self->id, sizeof self->id);
 	return h;
 }
 
@@ -165,32 +165,32 @@ static inline Span Span_default(void) { return (Span){}; }
 static inline bool Span_eq(Span const *const a, Span const *const b) {
 	return a->first == b->first && a->rows == b->rows && a->len == b->len;
 }
-static inline enum ordering Span_cmp(Span const *const a, Span const *const b) {
+static inline enum cerive_ordering Span_cmp(Span const *const a, Span const *const b) {
 	{
-		enum ordering const o = (a->first > b->first) - (a->first < b->first);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->first > b->first) - (a->first < b->first);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = (a->rows > b->rows) - (a->rows < b->rows);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->rows > b->rows) - (a->rows < b->rows);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = (a->len > b->len) - (a->len < b->len);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->len > b->len) - (a->len < b->len);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
-	return ordering_equal;
+	return cerive_equal;
 }
 static inline size_t Span_hash(Span const *const self) {
-	size_t h = hash_offset;
-	h = hash_bytes(h, &self->first, sizeof self->first);
-	h = hash_bytes(h, &self->rows, sizeof self->rows);
-	h = hash_bytes(h, &self->len, sizeof self->len);
+	size_t h = cerive_hash_offset;
+	h = cerive_hash_bytes(h, &self->first, sizeof self->first);
+	h = cerive_hash_bytes(h, &self->rows, sizeof self->rows);
+	h = cerive_hash_bytes(h, &self->len, sizeof self->len);
 	return h;
 }
 
@@ -215,25 +215,25 @@ static inline Boxed Boxed_default(void) { return (Boxed){}; }
 static inline bool Boxed_eq(Boxed const *const a, Boxed const *const b) {
 	return Point_eq(&a->origin, &b->origin) && a->seq == b->seq;
 }
-static inline enum ordering Boxed_cmp(Boxed const *const a, Boxed const *const b) {
+static inline enum cerive_ordering Boxed_cmp(Boxed const *const a, Boxed const *const b) {
 	{
-		enum ordering const o = Point_cmp(&a->origin, &b->origin);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = Point_cmp(&a->origin, &b->origin);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum ordering const o = (a->seq > b->seq) - (a->seq < b->seq);
-		if (o != ordering_equal) {
+		enum cerive_ordering const o = (a->seq > b->seq) - (a->seq < b->seq);
+		if (o != cerive_equal) {
 			return o;
 		}
 	}
-	return ordering_equal;
+	return cerive_equal;
 }
 static inline size_t Boxed_hash(Boxed const *const self) {
-	size_t h = hash_offset;
-	h = hash_mix(h, Point_hash(&self->origin));
-	h = hash_bytes(h, &self->seq, sizeof self->seq);
+	size_t h = cerive_hash_offset;
+	h = cerive_hash_mix(h, Point_hash(&self->origin));
+	h = cerive_hash_bytes(h, &self->seq, sizeof self->seq);
 	return h;
 }
 
@@ -272,4 +272,4 @@ static inline bool Shape_eq(Shape const *const a, Shape const *const b) {
 	unreachable();
 }
 
-#define Shape_new(...) UNION_NEW(Shape, __VA_ARGS__)
+#define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)

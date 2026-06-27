@@ -2,7 +2,7 @@ from cstructs.asm import canonical, diff_lines, instr_count, parse_syms, split_f
 
 
 def test_canonical_neutralizes_helpers_and_labels() -> None:
-    a = canonical("\tbl\tderive_rem\n.L9:\n\tbx\tlr")
+    a = canonical("\tbl\tcerive_buf_remaining\n.L9:\n\tbx\tlr")
     b = canonical("\tbl\thw_rem\n.L3:\n\tbx\tlr")
     assert a == b
 

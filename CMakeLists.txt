@@ -1,5 +1,28 @@
 cmake_minimum_required(VERSION 3.25)
-project(c_structs C ASM)
+
+# As a Zephyr module this header-only library only contributes its include path.
+if(DEFINED ZEPHYR_BASE)
+	if(CONFIG_CERIVE)
+		zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+	endif()
+	return()
+endif()
+
+project(cerive C ASM)
+
+# The library: header-only INTERFACE target, usable via add_subdirectory or
+# FetchContent as `cerive::cerive`.
+add_library(cerive INTERFACE)
+add_library(cerive::cerive ALIAS cerive)
+target_include_directories(cerive INTERFACE
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+	$<INSTALL_INTERFACE:include>)
+target_compile_features(cerive INTERFACE c_std_23)
+
+# Everything below is the evidence bench (ARM/QEMU); only when built standalone.
+if(NOT PROJECT_IS_TOP_LEVEL)
+	return()
+endif()
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -8,7 +31,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(ARM_CPU cortex-m3 CACHE STRING "Cortex-M core for the QEMU test build")
 set(QEMU_MACHINE lm3s6965evb CACHE STRING "QEMU machine for the test run")
-set(VARIANTS hybrid handwritten CACHE STRING "Struct-API implementations to compare")
+set(VARIANTS cerive handwritten CACHE STRING "Struct-API implementations to compare")
 
 add_compile_options(-mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion
@@ -28,7 +51,8 @@ enable_testing()
 
 foreach(v ${VARIANTS})
 	add_executable(test_${v} tests/test_shapes.c $<TARGET_OBJECTS:bsp>)
-	target_include_directories(test_${v} PRIVATE derive variants/${v})
+	target_link_libraries(test_${v} PRIVATE cerive)
+	target_include_directories(test_${v} PRIVATE variants/${v})
 	add_test(NAME ${v}
 		COMMAND ${QEMU} -M ${QEMU_MACHINE} -nographic -semihosting
 			-kernel $<TARGET_FILE:test_${v}>)
@@ -36,7 +60,8 @@ foreach(v ${VARIANTS})
 
 	# Compiled only so study.c lands in compile_commands.json (clangd coverage).
 	add_library(study_${v} OBJECT study/study.c)
-	target_include_directories(study_${v} PRIVATE derive variants/${v})
+	target_link_libraries(study_${v} PRIVATE cerive)
+	target_include_directories(study_${v} PRIVATE variants/${v})
 endforeach()
 
 include(cmake/matrix.cmake)

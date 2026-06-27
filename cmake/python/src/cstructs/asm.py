@@ -10,7 +10,15 @@ _DROP = re.compile(
     r"|save\b|pad\b|setfp\b|movsp\b|code\b|align\b|p2align\b|section\b|text\b|data\b)"
 )
 _FUNC = re.compile(r"^\s*\.type\s+(\w+),\s*%function")
-_HELPER = re.compile(r"\b(?:derive|hw)_(at|rem)\b")
+# The Debug cursor helpers differ in name between the derived (cerive_buf_*) and
+# hand-written (hw_*) variants; collapse both to one token so -O0 asm compares.
+_HELPERS = {
+    "cerive_buf_at": "H_at",
+    "hw_at": "H_at",
+    "cerive_buf_remaining": "H_rem",
+    "hw_rem": "H_rem",
+}
+_HELPER = re.compile(r"\b(" + "|".join(map(re.escape, _HELPERS)) + r")\b")
 _LOCAL = re.compile(r"\.L\w+")
 
 
@@ -42,7 +50,7 @@ def canonical(body: str) -> str:
     """Drop noise (comments, CFI/debug/section directives), neutralize helper
     symbol names and renumber local labels -- leaving comparable instructions.
 
-    >>> canonical("\\tbl\\tderive_rem\\t@ x\\n.L7:\\n\\tbx\\tlr")
+    >>> canonical("\\tbl\\tcerive_buf_remaining\\t@ x\\n.L7:\\n\\tbx\\tlr")
     'bl\\tH_rem\\n.L0:\\nbx\\tlr'
     """
     kept: list[str] = []
@@ -50,7 +58,7 @@ def canonical(body: str) -> str:
         line = _COMMENT.sub("", raw).rstrip()
         if not line.strip() or _DROP.match(line):
             continue
-        kept.append(_HELPER.sub(r"H_\1", line).strip())
+        kept.append(_HELPER.sub(lambda m: _HELPERS[m.group(1)], line).strip())
     labels: dict[str, str] = {}
     return _LOCAL.sub(lambda m: labels.setdefault(m.group(0), f".L{len(labels)}"), "\n".join(kept))
 

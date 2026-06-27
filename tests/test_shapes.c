@@ -34,16 +34,16 @@ static int total_order(void) {
 	int fails = 0;
 
 	Point const p = Point_new(3, 4);
-	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 4}) == ordering_equal);
-	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 5}) == ordering_less);
-	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 3}) == ordering_greater);
-	CHECK(Point_cmp(&p, &(Point){.x = 4, .y = 0}) == ordering_less);
-	CHECK(Point_cmp(&p, &(Point){.x = 2, .y = 9}) == ordering_greater);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 4}) == cerive_equal);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 5}) == cerive_less);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 3}) == cerive_greater);
+	CHECK(Point_cmp(&p, &(Point){.x = 4, .y = 0}) == cerive_less);
+	CHECK(Point_cmp(&p, &(Point){.x = 2, .y = 9}) == cerive_greater);
 
 	Frame const f = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
-	CHECK(Frame_cmp(&f, &f) == ordering_equal);
-	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 8}) == ordering_less);
-	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 3}}, .id = 0}) == ordering_greater);
+	CHECK(Frame_cmp(&f, &f) == cerive_equal);
+	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 8}) == cerive_less);
+	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 3}}, .id = 0}) == cerive_greater);
 
 	return fails;
 }
@@ -62,9 +62,9 @@ static int pointer_fields(void) {
 	CHECK(!Span_eq(&s, &(Span){.first = &p1, .rows = rows, .len = 2}));
 	CHECK(!Span_eq(&s, &(Span){.first = &p0, .rows = rows, .len = 9}));
 
-	CHECK(Span_cmp(&s, &s) == ordering_equal);
-	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 3}) == ordering_less);
-	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 1}) == ordering_greater);
+	CHECK(Span_cmp(&s, &s) == cerive_equal);
+	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 3}) == cerive_less);
+	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 1}) == cerive_greater);
 
 	Span const zero = Span_default();
 	CHECK(zero.first == NULL && zero.rows == NULL && zero.len == 0);
@@ -95,17 +95,17 @@ static int hashing(void) {
 static int const_usage(void) {
 	int fails = 0;
 
-	Frame const f = NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
+	Frame const f = CERIVE_NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
 	Frame const *const pf = &f;
 	CHECK(pf->id == 7);
 
 	char buf[128];
 	CHECK(Frame_debug(&f, buf, sizeof buf) > 0);
 	CHECK(Frame_eq(&f, &f));
-	CHECK(Frame_cmp(&f, &f) == ordering_equal);
+	CHECK(Frame_cmp(&f, &f) == cerive_equal);
 	CHECK(Frame_hash(&f) == Frame_hash(&f));
 
-	Point const pts[] = {NEW(Point, .x = 1, .y = 2), NEW(Point, .x = 3, .y = 4)};
+	Point const pts[] = {CERIVE_NEW(Point, .x = 1, .y = 2), CERIVE_NEW(Point, .x = 3, .y = 4)};
 	CHECK(Point_eq(&pts[0], &(Point const){.x = 1, .y = 2}));
 
 	CHECK(Frame_eq(&f, &(Frame const){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7}));
@@ -121,8 +121,8 @@ static int const_struct_member(void) {
 
 	CHECK(Boxed_eq(&b, &(Boxed){.origin = {1, 2}, .seq = 7}));
 	CHECK(!Boxed_eq(&b, &(Boxed){.origin = {1, 2}, .seq = 8}));
-	CHECK(Boxed_cmp(&b, &b) == ordering_equal);
-	CHECK(Boxed_cmp(&b, &(Boxed){.origin = {1, 2}, .seq = 8}) == ordering_less);
+	CHECK(Boxed_cmp(&b, &b) == cerive_equal);
+	CHECK(Boxed_cmp(&b, &(Boxed){.origin = {1, 2}, .seq = 8}) == cerive_less);
 	CHECK(Boxed_hash(&b) == Boxed_hash(&(Boxed){.origin = {1, 2}, .seq = 7}));
 
 	Boxed const z = Boxed_default();
@@ -138,19 +138,19 @@ static int const_struct_member(void) {
 static int fluent_construct(void) {
 	int fails = 0;
 
-	Point const p = NEW(Point, .x = 3, .y = 4);
+	Point const p = CERIVE_NEW(Point, .x = 3, .y = 4);
 	CHECK(Point_eq(&p, &(Point){.x = 3, .y = 4}));
 
-	Frame const f = NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
+	Frame const f = CERIVE_NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
 	CHECK(Frame_eq(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7}));
 
-	Frame const partial = NEW(Frame, .id = 7);
+	Frame const partial = CERIVE_NEW(Frame, .id = 7);
 	CHECK(Frame_eq(&partial, &(Frame){.id = 7}));
 	CHECK(partial.edge.a.x == 0 && partial.edge.b.y == 0);
 
-	Point a = NEW(Point, .x = 1, .y = 2);
+	Point a = CERIVE_NEW(Point, .x = 1, .y = 2);
 	Point *rows[] = {&a};
-	Span const s = NEW(Span, .first = &a, .rows = rows, .len = 1);
+	Span const s = CERIVE_NEW(Span, .first = &a, .rows = rows, .len = 1);
 	CHECK(s.first == &a && s.rows == rows && s.len == 1);
 
 	return fails;
@@ -203,7 +203,7 @@ static int union_construct_and_compare(void) {
 	Shape const point = Shape_new(Point, .x = 1, .y = 2);
 	Shape const frame = Shape_new(Frame, .edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7);
 
-	CHECK(UNION_IS(point, Point) && !UNION_IS(point, Frame));
+	CHECK(CERIVE_IS(point, Point) && !CERIVE_IS(point, Frame));
 	CHECK(point.Point.x == 1 && frame.Frame.id == 7);
 
 	CHECK(Shape_eq(&point, &Shape_new(Point, .x = 1, .y = 2)));

@@ -1,0 +1,4 @@
+name: cerive
+build:
+  cmake: .
+  kconfig: Kconfig

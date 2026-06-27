@@ -1,0 +1,5 @@
+config CERIVE
+	bool "cerive: derive struct methods via X-macros"
+	help
+	  Header-only C23 library. Enabling it adds the cerive include path so
+	  application code can #include <cerive/cerive.h>. No object code is added.

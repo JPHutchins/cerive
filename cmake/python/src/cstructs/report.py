@@ -29,7 +29,7 @@ def parse_size(output: str) -> SizeInfo | None:
 
 
 def _is_helper(fn: str) -> bool:
-    return fn.startswith(("derive_", "hw_"))
+    return fn.startswith(("cerive_", "hw_"))
 
 
 def render_report(
