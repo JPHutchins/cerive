@@ -32,5 +32,11 @@ bool study_span_eq(Span const *const a, Span const *const b) { return Span_eq(a,
 enum ordering study_span_cmp(Span const *const a, Span const *const b) { return Span_cmp(a, b); }
 size_t study_span_hash(Span const *const s) { return Span_hash(s); }
 
+int study_boxed_debug(Boxed const *const s, char *const b, size_t const n) { return Boxed_debug(s, b, n); }
+Boxed study_boxed_new(Point const origin, int32_t const seq) { return Boxed_new(origin, seq); }
+bool study_boxed_eq(Boxed const *const a, Boxed const *const b) { return Boxed_eq(a, b); }
+enum ordering study_boxed_cmp(Boxed const *const a, Boxed const *const b) { return Boxed_cmp(a, b); }
+size_t study_boxed_hash(Boxed const *const s) { return Boxed_hash(s); }
+
 int study_shape_debug(Shape const *const s, char *const b, size_t const n) { return Shape_debug(s, b, n); }
 bool study_shape_eq(Shape const *const a, Shape const *const b) { return Shape_eq(a, b); }

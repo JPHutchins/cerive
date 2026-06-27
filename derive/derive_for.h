@@ -46,16 +46,19 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define FOR_DECL(f) DISPATCH(FOR_DECL, f)
 #define FOR_DECL_SCALAR(type, name) type name;
 #define FOR_DECL_STRUCT(type, name) type name;
+#define FOR_DECL_CONSTSTRUCT(type, name) type name;
 #define FOR_DECL_PTR(star, type, name) type star name;
 #define DERIVE_STRUCT(T) typedef struct T {FOR_EACH(FOR_DECL, T##_FIELDS)} T
 
 #define FOR_PARAM(f) DISPATCH(FOR_PARAM, f)
 #define FOR_PARAM_SCALAR(type, name) type const name
 #define FOR_PARAM_STRUCT(type, name) type const name
+#define FOR_PARAM_CONSTSTRUCT(type, name) type name
 #define FOR_PARAM_PTR(star, type, name) type star const name
 #define FOR_INIT(f) DISPATCH(FOR_INIT, f)
 #define FOR_INIT_SCALAR(type, name) .name = name
 #define FOR_INIT_STRUCT(type, name) .name = name
+#define FOR_INIT_CONSTSTRUCT(type, name) .name = name
 #define FOR_INIT_PTR(star, type, name) .name = name
 #define DERIVE_NEW(T) \
 	static inline T T##_new(FOR_EACH_C(FOR_PARAM, T##_FIELDS)) { \
@@ -68,6 +71,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define FOR_EQ(f) DISPATCH(FOR_EQ, f)
 #define FOR_EQ_SCALAR(type, name) &&a->name == b->name
 #define FOR_EQ_STRUCT(type, name) &&type##_eq(&a->name, &b->name)
+#define FOR_EQ_CONSTSTRUCT(type, name) CONST_FWD(FOR_EQ_STRUCT, type, name)
 #define FOR_EQ_PTR(star, type, name) &&a->name == b->name
 #define DERIVE_PARTIAL_EQ(T) \
 	static inline bool T##_eq(T const *const a, T const *const b) { \
@@ -89,6 +93,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 			return o; \
 		} \
 	}
+#define FOR_ORD_CONSTSTRUCT(type, name) CONST_FWD(FOR_ORD_STRUCT, type, name)
 #define FOR_ORD_PTR(star, type, name) \
 	{ \
 		enum ordering const o = (a->name > b->name) - (a->name < b->name); \
@@ -105,6 +110,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define FOR_HASH(f) DISPATCH(FOR_HASH, f)
 #define FOR_HASH_SCALAR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define FOR_HASH_STRUCT(type, name) h = hash_mix(h, type##_hash(&self->name));
+#define FOR_HASH_CONSTSTRUCT(type, name) CONST_FWD(FOR_HASH_STRUCT, type, name)
 #define FOR_HASH_PTR(star, type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define DERIVE_HASH(T) \
 	static inline size_t T##_hash(T const *const self) { \
@@ -120,6 +126,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "="); \
 	off += type##_debug(&self->name, derive_at(buf, n, off), derive_rem(n, off)); \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), " ");
+#define FOR_DBG_CONSTSTRUCT(type, name) CONST_FWD(FOR_DBG_STRUCT, type, name)
 #define FOR_DBG_PTR(star, type, name) \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=%p ", (void *) self->name);
 #define DERIVE_DEBUG(T) \

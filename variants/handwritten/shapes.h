@@ -194,6 +194,49 @@ static inline size_t Span_hash(Span const *const self) {
 	return h;
 }
 
+typedef struct Boxed {
+	Point const origin;
+	int32_t seq;
+} Boxed;
+static inline int Boxed_debug(Boxed const *const self, char *const buf, size_t const n) {
+	int off = 0;
+	off += snprintf(hw_at(buf, n, off), hw_rem(n, off), "Boxed { ");
+	off += snprintf(hw_at(buf, n, off), hw_rem(n, off), "origin=");
+	off += Point_debug(&self->origin, hw_at(buf, n, off), hw_rem(n, off));
+	off += snprintf(hw_at(buf, n, off), hw_rem(n, off), " ");
+	off += snprintf(hw_at(buf, n, off), hw_rem(n, off), "seq=%" PRId32 " ", self->seq);
+	off += snprintf(hw_at(buf, n, off), hw_rem(n, off), "}");
+	return off;
+}
+static inline Boxed Boxed_new(Point const origin, int32_t const seq) {
+	return (Boxed){.origin = origin, .seq = seq};
+}
+static inline Boxed Boxed_default(void) { return (Boxed){}; }
+static inline bool Boxed_eq(Boxed const *const a, Boxed const *const b) {
+	return Point_eq(&a->origin, &b->origin) && a->seq == b->seq;
+}
+static inline enum ordering Boxed_cmp(Boxed const *const a, Boxed const *const b) {
+	{
+		enum ordering const o = Point_cmp(&a->origin, &b->origin);
+		if (o != ordering_equal) {
+			return o;
+		}
+	}
+	{
+		enum ordering const o = (a->seq > b->seq) - (a->seq < b->seq);
+		if (o != ordering_equal) {
+			return o;
+		}
+	}
+	return ordering_equal;
+}
+static inline size_t Boxed_hash(Boxed const *const self) {
+	size_t h = hash_offset;
+	h = hash_mix(h, Point_hash(&self->origin));
+	h = hash_bytes(h, &self->seq, sizeof self->seq);
+	return h;
+}
+
 enum Shape_tag : uint8_t { Point_tag, Line_tag, Frame_tag };
 typedef struct Shape {
 	union {

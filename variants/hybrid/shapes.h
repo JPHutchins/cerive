@@ -40,6 +40,15 @@ DERIVE_PARTIAL_EQ(Span)
 DERIVE_ORD(Span)
 DERIVE_HASH(Span)
 
+#define Boxed_FIELDS(X) X(Point const, origin) X(int32_t, seq)
+DERIVE_STRUCT(Boxed);
+DERIVE_DEBUG(Boxed)
+DERIVE_NEW(Boxed)
+DERIVE_DEFAULT(Boxed)
+DERIVE_PARTIAL_EQ(Boxed)
+DERIVE_ORD(Boxed)
+DERIVE_HASH(Boxed)
+
 #define Shape_VARIANTS(X) X(Point) X(Line) X(Frame)
 DERIVE_UNION(Shape);
 DERIVE_UNION_DEBUG(Shape)

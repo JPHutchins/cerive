@@ -38,17 +38,41 @@
 #define SCALAR_FMT_(...) SCALAR_FMT__(__VA_ARGS__)
 #define SCALAR_FMT__(fmt, ...) fmt
 
+/*
+ * Opt-in const struct members. A value field whose type ends in `const` --
+ * `(Inner const, in)` -> `Inner const in;` -- is a CONSTSTRUCT: the qualifier
+ * stays in the declaration, but the trait-fn paste base must drop it (else
+ * `Inner const##_eq` corrupts). UNCONST pastes a vanishing `const_DROP` onto the
+ * type's last token, so `Inner const` -> `Inner` (and only valid on a const-
+ * ending type, which is the only place it is used). const-qualified SCALARS need
+ * no help -- IS_SCALAR keys on the leading token and SCALAR_FMT ignores the rest.
+ */
+#define CAT(a, b) CAT_(a, b)
+#define CAT_(a, b) a##b
+#define const_DROP
+#define UNCONST(type) CAT(type, _DROP)
+#define const_ISCONST ~, 1,
+#define IS_CONST_TYPE(type) IS_CONST_TYPE_(CAT(type, _ISCONST), 0,)
+#define IS_CONST_TYPE_(...) IS_CONST_TYPE__(__VA_ARGS__)
+#define IS_CONST_TYPE__(head, flag, ...) flag
+#define CONST_FWD(handler, type, name) CONST_FWD_(handler, UNCONST(type), name)
+#define CONST_FWD_(handler, base, name) handler(base, name)
+
 #define FIELD_COUNT(...) FIELD_COUNT_(__VA_ARGS__, 3, 2, 1, 0)
 #define FIELD_COUNT_(a, b, c, n, ...) n
 #define FIELD_KIND(...) FIELD_KIND_C(FIELD_COUNT(__VA_ARGS__), __VA_ARGS__)
 #define FIELD_KIND_C(n, ...) FIELD_KIND_C2(n, __VA_ARGS__)
 #define FIELD_KIND_C2(n, ...) FIELD_KIND_##n(__VA_ARGS__)
 #define FIELD_KIND_3(star, type, name) PTR
-#define FIELD_KIND_2(type, name) FIELD_KIND_2_(IS_SCALAR(type))
-#define FIELD_KIND_2_(is) FIELD_KIND_2__(is)
-#define FIELD_KIND_2__(is) FIELD_KIND_K##is
-#define FIELD_KIND_K1 SCALAR
-#define FIELD_KIND_K0 STRUCT
+#define FIELD_KIND_2(type, name) FIELD_KIND_2S(IS_SCALAR(type), type)
+#define FIELD_KIND_2S(is, type) FIELD_KIND_2S_(is, type)
+#define FIELD_KIND_2S_(is, type) FIELD_KIND_S##is(type)
+#define FIELD_KIND_S1(type) SCALAR
+#define FIELD_KIND_S0(type) FIELD_KIND_2C(IS_CONST_TYPE(type))
+#define FIELD_KIND_2C(isc) FIELD_KIND_2C_(isc)
+#define FIELD_KIND_2C_(isc) FIELD_KIND_C##isc
+#define FIELD_KIND_C1 CONSTSTRUCT
+#define FIELD_KIND_C0 STRUCT
 
 #define DISPATCH(prefix, f) DISPATCH_(prefix, FIELD_KIND f, f)
 #define DISPATCH_(prefix, kind, f) DISPATCH__(prefix, kind, f)

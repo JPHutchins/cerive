@@ -113,6 +113,28 @@ static int const_usage(void) {
 	return fails;
 }
 
+static int const_struct_member(void) {
+	int fails = 0;
+
+	Boxed const b = Boxed_new((Point){.x = 1, .y = 2}, 7);
+	CHECK(b.origin.x == 1 && b.origin.y == 2 && b.seq == 7);
+
+	CHECK(Boxed_eq(&b, &(Boxed){.origin = {1, 2}, .seq = 7}));
+	CHECK(!Boxed_eq(&b, &(Boxed){.origin = {1, 2}, .seq = 8}));
+	CHECK(Boxed_cmp(&b, &b) == ordering_equal);
+	CHECK(Boxed_cmp(&b, &(Boxed){.origin = {1, 2}, .seq = 8}) == ordering_less);
+	CHECK(Boxed_hash(&b) == Boxed_hash(&(Boxed){.origin = {1, 2}, .seq = 7}));
+
+	Boxed const z = Boxed_default();
+	CHECK(z.origin.x == 0 && z.seq == 0);
+
+	char buf[64];
+	Boxed_debug(&b, buf, sizeof buf);
+	CHECK(strcmp(buf, "Boxed { origin=Point { x=1 y=2 } seq=7 }") == 0);
+
+	return fails;
+}
+
 static int fluent_construct(void) {
 	int fails = 0;
 
@@ -227,6 +249,7 @@ int main(void) {
 		+ hashing()
 		+ fluent_construct()
 		+ const_usage()
+		+ const_struct_member()
 		+ pointer_fields()
 		+ nested_composition()
 		+ debug_buffer_contract()
