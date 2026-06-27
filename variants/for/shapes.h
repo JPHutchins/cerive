@@ -4,7 +4,7 @@
 
 #include "derive_for.h"
 
-#define Point_FIELDS (SCALAR, int32_t, x), (SCALAR, int32_t, y)
+#define Point_FIELDS (int32_t, x), (int32_t, y)
 DERIVE_STRUCT(Point);
 DERIVE_DEBUG(Point)
 DERIVE_NEW(Point)
@@ -13,7 +13,7 @@ DERIVE_PARTIAL_EQ(Point)
 DERIVE_ORD(Point)
 DERIVE_HASH(Point)
 
-#define Line_FIELDS (STRUCT, Point, a), (STRUCT, Point, b)
+#define Line_FIELDS (Point, a), (Point, b)
 DERIVE_STRUCT(Line);
 DERIVE_DEBUG(Line)
 DERIVE_NEW(Line)
@@ -22,7 +22,7 @@ DERIVE_PARTIAL_EQ(Line)
 DERIVE_ORD(Line)
 DERIVE_HASH(Line)
 
-#define Frame_FIELDS (STRUCT, Line, edge), (SCALAR, int32_t, id)
+#define Frame_FIELDS (Line, edge), (int32_t, id)
 DERIVE_STRUCT(Frame);
 DERIVE_DEBUG(Frame)
 DERIVE_NEW(Frame)
@@ -31,7 +31,7 @@ DERIVE_PARTIAL_EQ(Frame)
 DERIVE_ORD(Frame)
 DERIVE_HASH(Frame)
 
-#define Span_FIELDS (PTR, Point, first), (PTR, Point *, rows), (SCALAR, int32_t, len)
+#define Span_FIELDS (*, Point, first), (*, Point *, rows), (int32_t, len)
 DERIVE_STRUCT(Span);
 DERIVE_DEBUG(Span)
 DERIVE_NEW(Span)

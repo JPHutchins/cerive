@@ -4,15 +4,16 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "fmt.h"
+#include "field.h"
 #include "hash.h"
 #include "ord.h"
 #include "union.h"
 
 /*
  * FOR_EACH derives. The field list is data -- comma-separated tuples mapped over
- * by a __VA_OPT__ recursion. Fields are tagged SCALAR or STRUCT; struct fields
- * compose by value and Debug / PartialEq recurse into the inner type.
+ * by a __VA_OPT__ recursion. A field's kind (scalar / struct / pointer) is
+ * inferred from the tuple by field.h's DISPATCH; struct fields compose by value
+ * and Debug / PartialEq recurse into the inner type.
  *
  * Feature-equal to derive_hybrid.h. FOR_EACH_C yields a comma-separated, no-
  * trailing-comma parameter list (so no DROP1), but the EXPAND nesting caps the
@@ -42,23 +43,20 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 
 #define UNION_OVER(m, T) FOR_EACH(m, T##_VARIANTS)
 
-#define FOR_DECL(f) FOR_DECL2 f
-#define FOR_DECL2(kind, ...) FOR_DECL_##kind(__VA_ARGS__)
+#define FOR_DECL(f) DISPATCH(FOR_DECL, f)
 #define FOR_DECL_SCALAR(type, name) type name;
 #define FOR_DECL_STRUCT(type, name) type name;
-#define FOR_DECL_PTR(type, name) type *name;
+#define FOR_DECL_PTR(star, type, name) type star name;
 #define DERIVE_STRUCT(T) typedef struct T {FOR_EACH(FOR_DECL, T##_FIELDS)} T
 
-#define FOR_PARAM(f) FOR_PARAM2 f
-#define FOR_PARAM2(kind, ...) FOR_PARAM_##kind(__VA_ARGS__)
+#define FOR_PARAM(f) DISPATCH(FOR_PARAM, f)
 #define FOR_PARAM_SCALAR(type, name) type const name
 #define FOR_PARAM_STRUCT(type, name) type const name
-#define FOR_PARAM_PTR(type, name) type *const name
-#define FOR_INIT(f) FOR_INIT2 f
-#define FOR_INIT2(kind, ...) FOR_INIT_##kind(__VA_ARGS__)
+#define FOR_PARAM_PTR(star, type, name) type star const name
+#define FOR_INIT(f) DISPATCH(FOR_INIT, f)
 #define FOR_INIT_SCALAR(type, name) .name = name
 #define FOR_INIT_STRUCT(type, name) .name = name
-#define FOR_INIT_PTR(type, name) .name = name
+#define FOR_INIT_PTR(star, type, name) .name = name
 #define DERIVE_NEW(T) \
 	static inline T T##_new(FOR_EACH_C(FOR_PARAM, T##_FIELDS)) { \
 		return (T){FOR_EACH_C(FOR_INIT, T##_FIELDS)}; \
@@ -67,18 +65,16 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define DERIVE_DEFAULT(T) \
 	static inline T T##_default(void) { return (T){}; }
 
-#define FOR_EQ(f) FOR_EQ2 f
-#define FOR_EQ2(kind, ...) FOR_EQ_##kind(__VA_ARGS__)
+#define FOR_EQ(f) DISPATCH(FOR_EQ, f)
 #define FOR_EQ_SCALAR(type, name) &&a->name == b->name
 #define FOR_EQ_STRUCT(type, name) &&type##_eq(&a->name, &b->name)
-#define FOR_EQ_PTR(type, name) &&a->name == b->name
+#define FOR_EQ_PTR(star, type, name) &&a->name == b->name
 #define DERIVE_PARTIAL_EQ(T) \
 	static inline bool T##_eq(T const *const a, T const *const b) { \
 		return true FOR_EACH(FOR_EQ, T##_FIELDS); \
 	}
 
-#define FOR_ORD(f) FOR_ORD2 f
-#define FOR_ORD2(kind, ...) FOR_ORD_##kind(__VA_ARGS__)
+#define FOR_ORD(f) DISPATCH(FOR_ORD, f)
 #define FOR_ORD_SCALAR(type, name) \
 	{ \
 		enum ordering const o = (a->name > b->name) - (a->name < b->name); \
@@ -93,7 +89,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 			return o; \
 		} \
 	}
-#define FOR_ORD_PTR(type, name) \
+#define FOR_ORD_PTR(star, type, name) \
 	{ \
 		enum ordering const o = (a->name > b->name) - (a->name < b->name); \
 		if (o != ordering_equal) { \
@@ -106,11 +102,10 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 		return ordering_equal; \
 	}
 
-#define FOR_HASH(f) FOR_HASH2 f
-#define FOR_HASH2(kind, ...) FOR_HASH_##kind(__VA_ARGS__)
+#define FOR_HASH(f) DISPATCH(FOR_HASH, f)
 #define FOR_HASH_SCALAR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define FOR_HASH_STRUCT(type, name) h = hash_mix(h, type##_hash(&self->name));
-#define FOR_HASH_PTR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define FOR_HASH_PTR(star, type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define DERIVE_HASH(T) \
 	static inline size_t T##_hash(T const *const self) { \
 		size_t h = hash_offset; \
@@ -118,15 +113,14 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 		return h; \
 	}
 
-#define FOR_DBG(f) FOR_DBG2 f
-#define FOR_DBG2(kind, ...) FOR_DBG_##kind(__VA_ARGS__)
+#define FOR_DBG(f) DISPATCH(FOR_DBG, f)
 #define FOR_DBG_SCALAR(type, name) \
-	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=" DERIVE_FMT_##type " ", self->name);
+	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=" SCALAR_FMT(type) " ", self->name);
 #define FOR_DBG_STRUCT(type, name) \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "="); \
 	off += type##_debug(&self->name, derive_at(buf, n, off), derive_rem(n, off)); \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), " ");
-#define FOR_DBG_PTR(type, name) \
+#define FOR_DBG_PTR(star, type, name) \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=%p ", (void *) self->name);
 #define DERIVE_DEBUG(T) \
 	static inline int T##_debug(T const *const self, char *const buf, size_t const n) { \

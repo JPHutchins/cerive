@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "fmt.h"
+#include "field.h"
 #include "hash.h"
 #include "ord.h"
 #include "union.h"
@@ -12,8 +12,9 @@
 /*
  * Hybrid derives. Classic operator-threaded `T##_FIELDS(X)` -- one macro per
  * generator, no field-count ceiling; DROP1 peels the leading comma off the
- * constructor parameter list. Fields are tagged SCALAR or STRUCT; struct fields
- * compose by value and Debug / PartialEq recurse.
+ * constructor parameter list. A field's kind (scalar / struct / pointer) is
+ * inferred from the tuple by field.h's DISPATCHV; struct fields compose by value
+ * and Debug / PartialEq recurse.
  *
  * Feature-equal to derive_for.h.
  */
@@ -30,20 +31,20 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 
 #define UNION_OVER(m, T) T##_VARIANTS(m)
 
-#define HY_DECL(kind, ...) HY_DECL_##kind(__VA_ARGS__)
+#define HY_DECL(...) DISPATCHV(HY_DECL, __VA_ARGS__)
 #define HY_DECL_SCALAR(type, name) type name;
 #define HY_DECL_STRUCT(type, name) type name;
-#define HY_DECL_PTR(type, name) type *name;
+#define HY_DECL_PTR(star, type, name) type star name;
 #define DERIVE_STRUCT(T) typedef struct T {T##_FIELDS(HY_DECL)} T
 
-#define HY_PARAM(kind, ...) HY_PARAM_##kind(__VA_ARGS__)
+#define HY_PARAM(...) DISPATCHV(HY_PARAM, __VA_ARGS__)
 #define HY_PARAM_SCALAR(type, name) , type const name
 #define HY_PARAM_STRUCT(type, name) , type const name
-#define HY_PARAM_PTR(type, name) , type *const name
-#define HY_INIT(kind, ...) HY_INIT_##kind(__VA_ARGS__)
+#define HY_PARAM_PTR(star, type, name) , type star const name
+#define HY_INIT(...) DISPATCHV(HY_INIT, __VA_ARGS__)
 #define HY_INIT_SCALAR(type, name) .name = name,
 #define HY_INIT_STRUCT(type, name) .name = name,
-#define HY_INIT_PTR(type, name) .name = name,
+#define HY_INIT_PTR(star, type, name) .name = name,
 #define DERIVE_NEW(T) \
 	static inline T T##_new(DERIVE_DROP1(T##_FIELDS(HY_PARAM))) { \
 		return (T){T##_FIELDS(HY_INIT)}; \
@@ -52,16 +53,16 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define DERIVE_DEFAULT(T) \
 	static inline T T##_default(void) { return (T){}; }
 
-#define HY_EQ(kind, ...) HY_EQ_##kind(__VA_ARGS__)
+#define HY_EQ(...) DISPATCHV(HY_EQ, __VA_ARGS__)
 #define HY_EQ_SCALAR(type, name) &&a->name == b->name
 #define HY_EQ_STRUCT(type, name) &&type##_eq(&a->name, &b->name)
-#define HY_EQ_PTR(type, name) &&a->name == b->name
+#define HY_EQ_PTR(star, type, name) &&a->name == b->name
 #define DERIVE_PARTIAL_EQ(T) \
 	static inline bool T##_eq(T const *const a, T const *const b) { \
 		return true T##_FIELDS(HY_EQ); \
 	}
 
-#define HY_ORD(kind, ...) HY_ORD_##kind(__VA_ARGS__)
+#define HY_ORD(...) DISPATCHV(HY_ORD, __VA_ARGS__)
 #define HY_ORD_SCALAR(type, name) \
 	{ \
 		enum ordering const o = (a->name > b->name) - (a->name < b->name); \
@@ -76,7 +77,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 			return o; \
 		} \
 	}
-#define HY_ORD_PTR(type, name) \
+#define HY_ORD_PTR(star, type, name) \
 	{ \
 		enum ordering const o = (a->name > b->name) - (a->name < b->name); \
 		if (o != ordering_equal) { \
@@ -89,10 +90,10 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 		return ordering_equal; \
 	}
 
-#define HY_HASH(kind, ...) HY_HASH_##kind(__VA_ARGS__)
+#define HY_HASH(...) DISPATCHV(HY_HASH, __VA_ARGS__)
 #define HY_HASH_SCALAR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define HY_HASH_STRUCT(type, name) h = hash_mix(h, type##_hash(&self->name));
-#define HY_HASH_PTR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define HY_HASH_PTR(star, type, name) h = hash_bytes(h, &self->name, sizeof self->name);
 #define DERIVE_HASH(T) \
 	static inline size_t T##_hash(T const *const self) { \
 		size_t h = hash_offset; \
@@ -100,14 +101,14 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 		return h; \
 	}
 
-#define HY_DBG(kind, ...) HY_DBG_##kind(__VA_ARGS__)
+#define HY_DBG(...) DISPATCHV(HY_DBG, __VA_ARGS__)
 #define HY_DBG_SCALAR(type, name) \
-	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=" DERIVE_FMT_##type " ", self->name);
+	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=" SCALAR_FMT(type) " ", self->name);
 #define HY_DBG_STRUCT(type, name) \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "="); \
 	off += type##_debug(&self->name, derive_at(buf, n, off), derive_rem(n, off)); \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), " ");
-#define HY_DBG_PTR(type, name) \
+#define HY_DBG_PTR(star, type, name) \
 	off += snprintf(derive_at(buf, n, off), derive_rem(n, off), #name "=%p ", (void *) self->name);
 #define DERIVE_DEBUG(T) \
 	static inline int T##_debug(T const *const self, char *const buf, size_t const n) { \
