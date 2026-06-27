@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "each.h"
 #include "field.h"
 #include "hash.h"
 #include "ord.h"
@@ -36,7 +37,7 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 #define HY_DECL_STRUCT(type, name) type name;
 #define HY_DECL_CONSTSTRUCT(type, name) type name;
 #define HY_DECL_PTR(star, type, name) type star name;
-#define DERIVE_STRUCT(T) typedef struct T {T##_FIELDS(HY_DECL)} T
+#define DERIVE_STRUCT(T) typedef struct T {T##_FIELDS(HY_DECL)} T;
 
 #define HY_PARAM(...) DISPATCHV(HY_PARAM, __VA_ARGS__)
 #define HY_PARAM_SCALAR(type, name) , type const name
@@ -125,3 +126,10 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 		off += snprintf(derive_at(buf, n, off), derive_rem(n, off), "}"); \
 		return off; \
 	}
+
+/*
+ * Combinator: DERIVE(T, traits...) fans out to DERIVE_<trait>(T) for each named
+ * trait -- DERIVE(Point, STRUCT, DEBUG, NEW, DEFAULT, PARTIAL_EQ, ORD, HASH).
+ * STRUCT must lead (it defines the type the rest reference).
+ */
+#define DERIVE(T, ...) DERIVE_OVER(DERIVE, T, __VA_ARGS__)

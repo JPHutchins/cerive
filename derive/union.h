@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "each.h"
 #include "new.h"
 
 /*
@@ -16,7 +17,8 @@
  * A deriveable union T is described by `T##_VARIANTS` listing member type names;
  * each must be a top-level type that derives the same operation (Debug ->
  * _debug, PartialEq -> _eq). UNION_OVER(mapper, T) is provided by the including
- * framework (derive_for.h / derive_hybrid.h) to iterate that list.
+ * framework (derive_hybrid.h) to iterate that list. DERIVE_UNION(T, traits...)
+ * fans out like DERIVE: DERIVE_UNION(Shape, DEBUG, PARTIAL_EQ).
  */
 
 #define UNION_ENUM(variant) variant##_tag,
@@ -28,14 +30,15 @@
 	case variant##_tag: \
 		return variant##_eq(&a->variant, &b->variant);
 
-#define DERIVE_UNION(T) \
+#define DERIVE_UNION_DEF(T) \
 	enum T##_tag : uint8_t { UNION_OVER(UNION_ENUM, T) }; \
 	typedef struct T { \
 		union { \
 			UNION_OVER(UNION_MEMBER, T) \
 		}; \
 		enum T##_tag tag; \
-	} T
+	} T;
+#define DERIVE_UNION(T, ...) DERIVE_UNION_DEF(T) DERIVE_OVER(DERIVE_UNION, T, __VA_ARGS__)
 
 #define DERIVE_UNION_DEBUG(T) \
 	static inline int T##_debug(T const *const self, char *const buf, size_t const n) { \

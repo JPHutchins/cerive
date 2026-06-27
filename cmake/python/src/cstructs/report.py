@@ -100,13 +100,15 @@ def render_report(
         body.append("")
 
     cand_label = " ≡ ".join(candidates) if candidates else "(none)"
-    head = [
-        "# Evidence — codegen comparison",
-        "",
-        f"**{cand_label}:** "
-        + ("✅ identical everywhere" if not strat_breaks else "❌ differ at " + ", ".join(dict.fromkeys(strat_breaks))),
-        "",
-        f"**candidates ≡ {baseline}:** "
+    head = ["# Evidence — codegen comparison", ""]
+    if len(candidates) >= 2:  # only meaningful with rival strategies to agree/disagree
+        head += [
+            f"**{cand_label}:** "
+            + ("✅ identical everywhere" if not strat_breaks else "❌ differ at " + ", ".join(dict.fromkeys(strat_breaks))),
+            "",
+        ]
+    head += [
+        f"**{cand_label} ≡ {baseline}:** "
         + ("✅ identical everywhere" if not base_breaks else "⚠️ differ at " + ", ".join(dict.fromkeys(base_breaks))),
         "",
     ]

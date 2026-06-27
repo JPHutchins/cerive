@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(ARM_CPU cortex-m3 CACHE STRING "Cortex-M core for the QEMU test build")
 set(QEMU_MACHINE lm3s6965evb CACHE STRING "QEMU machine for the test run")
-set(VARIANTS for hybrid handwritten CACHE STRING "Struct-API implementations to compare")
+set(VARIANTS hybrid handwritten CACHE STRING "Struct-API implementations to compare")
 
 add_compile_options(-mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion

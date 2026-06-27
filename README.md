@@ -4,15 +4,21 @@ A test bench for emulating Rust's `#[derive(...)]` in embedded C23 with X-macros
 and for gathering **codegen evidence** about whether that abstraction is free.
 
 A "deriveable" type is described once by a field list; generator macros expand it
-into the struct plus its methods (`Debug`, `new`, `Default`, `PartialEq`).
-Tagged unions are derived the same way from a variant list, where each variant
-token names its union member and member struct, plus a `_tag`-suffixed enum
-discriminant (three C namespaces) so construction and matching are pure token
+into the struct plus its methods (`Debug`, `new`, `Default`, `PartialEq`, `Ord`,
+`Hash`). Tagged unions are derived the same way from a variant list, where each
+variant token names its union member and member struct, plus a `_tag`-suffixed
+enum discriminant (three C namespaces) so construction and matching are pure token
 reuse while the field structs stay `typedef`'d. The
 harness then (a) proves each derive is **correct** by running it on ARM under
 QEMU, and (b) emits a **comparison matrix** — preprocessed expansion, assembly,
 disassembly and segment sizes — for the derived code versus a hand-written
 equivalent, across optimization levels and Cortex-M cores.
+
+The experiment compared two X-macro strategies — a `FOR_EACH`/`__VA_OPT__` unroll
+and classic operator-threading — against the hand-written baseline. They stayed
+byte-identical through every capability except one: the unroll has a hard field-
+count ceiling (~41), while threading has none. **Threading won**; it is the sole
+remaining `derive/derive_hybrid.h`. The unroll variant lives in git history.
 
 ## Toolchain
 
@@ -56,19 +62,20 @@ axis is free to range over parts that no QEMU machine models.
 | `*.size` | whole-TU `text` / `data` / `bss` |
 | `*.sym` | per-function sizes (`nm --print-size`) |
 
-and `build/matrix/report.md`: a top verdict (`for ≡ hybrid`? `≡ handwritten`?), a
+and `build/matrix/report.md`: a top verdict (`hybrid ≡ handwritten`?), a
 per-function **equivalence grid** (`=` identical asm · `+N` Δbytes vs baseline ·
 `⚠` candidates disagree), and, for any divergent cell, a **normalized unified
 asm diff** (helper names and local labels neutralized so only real codegen
 differences show). The comparison logic lives in the typed, tested
 [cstructs.asm](cmake/python/src/cstructs/asm.py) / `report` modules.
 
-The seeded `Point`/`Line`/`Frame` already show the result: both derive styles
-(`for`, `hybrid`) produce **byte-identical** code to the hand-written baseline at
-every optimization level, including the recursive nested `Frame` (`diff
-build/matrix/for.*.O2.s build/matrix/hybrid.*.O2.s` is empty, likewise vs
-`handwritten`). `Debug` is the one capability with real cost — it pulls in
-`snprintf` everywhere — kept for contrast. Reaching parity required the generated
+The seeded `Point`/`Line`/`Frame`/`Span`/`Boxed` show the result: the derived code
+is **byte-identical** to the hand-written baseline at every optimization level —
+flat structs, recursive nesting (`Frame`), pointer fields (`Span`), const members
+(`Boxed`), tagged-union dispatch (`Shape`) — across `Debug`/`new`/`Default`/
+`PartialEq`/`Ord`/`Hash` (`diff build/matrix/hybrid.*.O2.s build/matrix/handwritten.*.O2.s`
+is empty). `Debug` is the one capability with real cost — it pulls in `snprintf`
+everywhere — kept for contrast. Reaching parity required the generated
 constructors to take `const` by-value parameters; without it a nested struct
 field forces a defensive copy — caught by the matrix at `-O1+`, not the `-O0`
 tests.
@@ -107,28 +114,47 @@ uv run mypy       # strict
 uv run pytest     # units + doctests
 ```
 
+## Defining a type
+
+A field list plus one `DERIVE(...)` naming the traits to generate (`STRUCT` must
+lead — it defines the type the rest reference). The field kind is inferred, not
+tagged: `(type, name)` is a scalar or nested struct, `(type const, name)` a const
+member, `(*, type, name)` a by-address pointer (the `*` reads literally — `(*,
+Point *, p)` is a `Point **`):
+
+```c
+#define Frame_FIELDS(X) \
+    X(Line, edge) \
+    X(int32_t, id)
+DERIVE(Frame, STRUCT, DEBUG, NEW, DEFAULT, PARTIAL_EQ, ORD, HASH)
+
+Frame const f = NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
+```
+
+Scalar formats come from the compile-time registry in
+[derive/field.h](derive/field.h) (keyed by type — add an entry for a new scalar).
+
 ## Adding to the bench
 
 - **Another implementation to compare:** add `variants/<name>/shapes.h` exposing
   the same type API, then append `<name>` to `-DVARIANTS=...`. It automatically
-  gains a QEMU test and matrix rows.
-- **Another deriveable type:** give it a `T_FIELDS` list and the `DERIVE_*` calls
-  in each impl's [variants/](variants/) header, then exercise it from
-  [study/study.c](study/study.c) and [tests/test_shapes.c](tests/test_shapes.c).
-- **Another derive (or requirement):** add a generator to both
-  [derive/derive_for.h](derive/derive_for.h) and
-  [derive/derive_hybrid.h](derive/derive_hybrid.h). Keeping the two 1:1 *is* the
-  experiment — pile on requirements until one approach loses viability.
+  gains a QEMU test and matrix rows. (`handwritten` is the baseline; the rest are
+  candidates compared against it.)
+- **Another deriveable type:** give it a `T_FIELDS(X)` list and a `DERIVE(...)`
+  in the [variants/](variants/) header (hand-mirror it in `handwritten`), then
+  exercise it from [study/study.c](study/study.c) and
+  [tests/test_shapes.c](tests/test_shapes.c).
+- **Another derive:** add a `DERIVE_<NAME>` generator to
+  [derive/derive_hybrid.h](derive/derive_hybrid.h) (a per-field handler trio for
+  the `SCALAR`/`STRUCT`/`PTR` kinds) and list `<NAME>` in the `DERIVE(...)` call.
 
 ## Tagged unions
 
 A union is a variant list whose members are its member struct types:
 
 ```c
-#define Shape_VARIANTS Point, Line, Frame      /* derive_for; hybrid: (X) X(Point)... */
-DERIVE_UNION(Shape);
-DERIVE_UNION_DEBUG(Shape)
-DERIVE_UNION_PARTIAL_EQ(Shape)
+#define Shape_VARIANTS(X) X(Point) X(Line) X(Frame)
+DERIVE_UNION(Shape, DEBUG, PARTIAL_EQ)   /* fans out like DERIVE; struct/enum implied */
 #define Shape_new(...) UNION_NEW(Shape, __VA_ARGS__)
 ```
 
@@ -162,11 +188,13 @@ cmake/python/             uv project `cstructs`: the typed string transforms
   src/cstructs/cli.py       thin cyclopts shims that CMake invokes
   tests/                    pytest units (+ doctests in the modules)
 bsp/                      bare-metal harness: vector table, semihosting, linker
-derive/                   two feature-equal derive frameworks (same type API):
-  derive_for.h              FOR_EACH / __VA_OPT__ unroll (comma-tuple fields)
-  derive_hybrid.h           classic operator-threaded + DROP1 (no field-count cap)
-  union.h                   generic tagged-union helpers (UNION_NEW/IS, MATCH/CASE)
-variants/<impl>/shapes.h  for | hybrid | handwritten — Point/Line/Frame, compared
+derive/                   the derive framework (operator-threaded X-macros):
+  derive_hybrid.h           per-field generators + DERIVE(T, traits...) combinator
+  field.h                   field-kind inference + scalar format registry
+  each.h                    DERIVE_OVER: generic comma-list fan-out
+  ord.h hash.h new.h        Ordering enum, FNV-1a, NEW() compound-literal ctor
+  union.h                   tagged-union helpers (DERIVE_UNION, NEW/IS, MATCH/CASE)
+variants/<impl>/shapes.h  hybrid (derived) | handwritten (baseline), compared
 study/study.c             stable entry points so the codegen is emitted
 tests/test_shapes.c       correctness + sizing/truncation, run under QEMU per impl
 .clangd .vscode/ .envrc   IDE: clangd over build/compile_commands.json
