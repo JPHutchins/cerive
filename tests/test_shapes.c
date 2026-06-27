@@ -92,6 +92,27 @@ static int hashing(void) {
 	return fails;
 }
 
+static int const_usage(void) {
+	int fails = 0;
+
+	Frame const f = NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
+	Frame const *const pf = &f;
+	CHECK(pf->id == 7);
+
+	char buf[128];
+	CHECK(Frame_debug(&f, buf, sizeof buf) > 0);
+	CHECK(Frame_eq(&f, &f));
+	CHECK(Frame_cmp(&f, &f) == ordering_equal);
+	CHECK(Frame_hash(&f) == Frame_hash(&f));
+
+	Point const pts[] = {NEW(Point, .x = 1, .y = 2), NEW(Point, .x = 3, .y = 4)};
+	CHECK(Point_eq(&pts[0], &(Point const){.x = 1, .y = 2}));
+
+	CHECK(Frame_eq(&f, &(Frame const){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7}));
+
+	return fails;
+}
+
 static int fluent_construct(void) {
 	int fails = 0;
 
@@ -205,6 +226,7 @@ int main(void) {
 		+ total_order()
 		+ hashing()
 		+ fluent_construct()
+		+ const_usage()
 		+ pointer_fields()
 		+ nested_composition()
 		+ debug_buffer_contract()
