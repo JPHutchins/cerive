@@ -30,6 +30,54 @@ static int flat_struct(void) {
 	return fails;
 }
 
+static int total_order(void) {
+	int fails = 0;
+
+	Point const p = Point_new(3, 4);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 4}) == ordering_equal);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 5}) == ordering_less);
+	CHECK(Point_cmp(&p, &(Point){.x = 3, .y = 3}) == ordering_greater);
+	CHECK(Point_cmp(&p, &(Point){.x = 4, .y = 0}) == ordering_less);
+	CHECK(Point_cmp(&p, &(Point){.x = 2, .y = 9}) == ordering_greater);
+
+	Frame const f = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
+	CHECK(Frame_cmp(&f, &f) == ordering_equal);
+	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 8}) == ordering_less);
+	CHECK(Frame_cmp(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 3}}, .id = 0}) == ordering_greater);
+
+	return fails;
+}
+
+static int pointer_fields(void) {
+	int fails = 0;
+
+	Point p0 = Point_new(1, 2);
+	Point p1 = Point_new(3, 4);
+	Point *rows[] = {&p0, &p1};
+
+	Span const s = Span_new(&p0, rows, 2);
+	CHECK(s.first == &p0 && s.rows == rows && s.len == 2);
+
+	CHECK(Span_eq(&s, &(Span){.first = &p0, .rows = rows, .len = 2}));
+	CHECK(!Span_eq(&s, &(Span){.first = &p1, .rows = rows, .len = 2}));
+	CHECK(!Span_eq(&s, &(Span){.first = &p0, .rows = rows, .len = 9}));
+
+	CHECK(Span_cmp(&s, &s) == ordering_equal);
+	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 3}) == ordering_less);
+	CHECK(Span_cmp(&s, &(Span){.first = &p0, .rows = rows, .len = 1}) == ordering_greater);
+
+	Span const zero = Span_default();
+	CHECK(zero.first == NULL && zero.rows == NULL && zero.len == 0);
+
+	char buf[64];
+	int const need = Span_debug(&s, buf, sizeof buf);
+	CHECK(need == (int) strlen(buf));
+	CHECK(strncmp(buf, "Span { first=", 13) == 0);
+	CHECK(Span_debug(&s, NULL, 0) == need);
+
+	return fails;
+}
+
 static int nested_composition(void) {
 	int fails = 0;
 
@@ -119,6 +167,8 @@ static int union_match(void) {
 int main(void) {
 	int const fails =
 		flat_struct()
+		+ total_order()
+		+ pointer_fields()
 		+ nested_composition()
 		+ debug_buffer_contract()
 		+ union_construct_and_compare()

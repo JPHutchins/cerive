@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*
  * Generic tagged-union helpers. A variant token names three things in three
@@ -26,7 +27,7 @@
 		return variant##_eq(&a->variant, &b->variant);
 
 #define DERIVE_UNION(T) \
-	enum T##_tag { UNION_OVER(UNION_ENUM, T) }; \
+	enum T##_tag : uint8_t { UNION_OVER(UNION_ENUM, T) }; \
 	typedef struct T { \
 		union { \
 			UNION_OVER(UNION_MEMBER, T) \
