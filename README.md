@@ -2,8 +2,10 @@
 
 `cerive` derives struct methods — `Debug`, `new`, `Default`, `PartialEq`, `Ord`,
 `Hash` — and type-safe tagged unions from one field list, in standard embedded
-C23 X-macros. It is header-only ([include/cerive/](include/cerive/)), and the
-generated code is intended to be **byte-identical to hand-written** at every
+C23 X-macros. The derive machinery is header-only macros
+([include/cerive/](include/cerive/)); a single [src/cerive.c](src/cerive.c)
+provides the small shared runtime (so it is not duplicated per translation unit).
+The generated code is intended to be **byte-identical to hand-written** at every
 optimization level. This repo is both the library and the evidence bench that
 proves that claim.
 
@@ -36,17 +38,18 @@ history.
 
 ## Use as a library
 
-Header-only, so just put [include/](include/) on your include path and
-`#include <cerive/cerive.h>`. With CMake (`add_subdirectory` or `FetchContent`):
+Put [include/](include/) on your include path, `#include <cerive/cerive.h>`, and
+compile [src/cerive.c](src/cerive.c) once (the shared runtime). With CMake
+(`add_subdirectory` or `FetchContent`) that's automatic:
 
 ```cmake
 add_subdirectory(cerive)
-target_link_libraries(app PRIVATE cerive::cerive)   # C23 + the include path
+target_link_libraries(app PRIVATE cerive::cerive)   # C23, the include path, the runtime
 ```
 
-As a **Zephyr module**, point `west`/`ZEPHYR_EXTRA_MODULES` at this repo and
+As a **Zephyr module**, point `west`/`ZEPHYR_EXTRA_MODULES` at this repo and set
 `CONFIG_CERIVE=y`; [zephyr/module.yml](zephyr/module.yml) adds the include path
-(no object code). The rest of this README is the bench.
+and the one runtime source. The rest of this README is the bench.
 
 ## Toolchain
 
@@ -211,14 +214,16 @@ MATCH (s) {                                      /* type-safe match (CERIVE_MATC
 ## Layout
 
 ```
-include/cerive/           the library (header-only, #include <cerive/cerive.h>):
+include/cerive/           the library macros (#include <cerive/cerive.h>):
   cerive.h                  per-field generators + CERIVE(T, traits...) combinator
   field.h                   field-kind inference + scalar format registry
   each.h                    CERIVE_P_over: generic comma-list fan-out
   ord.h hash.h new.h        cerive_ordering, FNV-1a, CERIVE_NEW compound-literal
+  buf.h                     Debug offset-cursor prototypes
   union.h                   tagged-union helpers (CERIVE_UNION, NEW/IS, MATCH/CASE)
-CMakeLists.txt            cerive::cerive INTERFACE lib; Zephyr branch; the bench
-zephyr/module.yml Kconfig Zephyr module (header-only; CONFIG_CERIVE adds includes)
+src/cerive.c              the shared runtime helpers (cerive_buf_*, cerive_hash_*)
+CMakeLists.txt            cerive::cerive STATIC lib; Zephyr branch; the bench
+zephyr/module.yml Kconfig Zephyr module (CONFIG_CERIVE adds includes + the runtime)
 flake.nix                 dev shell (toolchain, qemu, cmake/ninja, astyle)
 CMakePresets.json         `arm` configure / `evidence` build / `arm` test presets
 cmake/

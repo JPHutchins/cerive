@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "buf.h"
 #include "each.h"
 #include "field.h"
 #include "hash.h"
@@ -29,16 +30,6 @@
 #define CERIVE_VERSION_MAJOR 0
 #define CERIVE_VERSION_MINOR 1
 #define CERIVE_VERSION_PATCH 0
-
-/* Offset-cursor helpers: where the next snprintf writes, and how much room is
- * left, so Debug fills the caller's buffer in one pass and returns the would-be
- * length (the buffer-size contract) without intermediate allocations. */
-static inline size_t cerive_buf_remaining(size_t const cap, int const off) {
-	return (off >= 0 && (size_t) off < cap) ? cap - (size_t) off : 0;
-}
-static inline char *cerive_buf_at(char *const buf, size_t const cap, int const off) {
-	return buf + ((off >= 0 && (size_t) off < cap) ? (size_t) off : cap);
-}
 
 #define CERIVE_P_drop_first(...) CERIVE_P_drop_first_(__VA_ARGS__)
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__

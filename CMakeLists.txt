@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
 
-# As a Zephyr module this header-only library only contributes its include path.
+# As a Zephyr module: add the include path and compile the one runtime source.
 if(DEFINED ZEPHYR_BASE)
 	if(CONFIG_CERIVE)
+		zephyr_library()
+		zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/cerive.c)
 		zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 	endif()
 	return()
@@ -10,14 +12,15 @@ endif()
 
 project(cerive C ASM)
 
-# The library: header-only INTERFACE target, usable via add_subdirectory or
+# The library: the derive machinery is header-only macros; src/cerive.c is the one
+# compiled TU holding the shared runtime helpers. Usable via add_subdirectory or
 # FetchContent as `cerive::cerive`.
-add_library(cerive INTERFACE)
+add_library(cerive STATIC src/cerive.c)
 add_library(cerive::cerive ALIAS cerive)
-target_include_directories(cerive INTERFACE
+target_include_directories(cerive PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>)
-target_compile_features(cerive INTERFACE c_std_23)
+target_compile_features(cerive PUBLIC c_std_23)
 
 # Everything below is the evidence bench (ARM/QEMU); only when built standalone.
 if(NOT PROJECT_IS_TOP_LEVEL)
@@ -33,9 +36,12 @@ set(ARM_CPU cortex-m3 CACHE STRING "Cortex-M core for the QEMU test build")
 set(QEMU_MACHINE lm3s6965evb CACHE STRING "QEMU machine for the test run")
 set(VARIANTS cerive handwritten CACHE STRING "Struct-API implementations to compare")
 
-add_compile_options(-mcpu=${ARM_CPU} -mthumb
+set(ARM_OPTS -mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion
 	-ffunction-sections -fdata-sections)
+add_compile_options(${ARM_OPTS})
+# cerive was created before the directory options above, so flag it explicitly.
+target_compile_options(cerive PRIVATE ${ARM_OPTS})
 add_link_options(-mcpu=${ARM_CPU} -mthumb
 	-nostartfiles -Wl,--gc-sections --specs=nano.specs
 	-T ${CMAKE_SOURCE_DIR}/bsp/lm3s6965.ld)
