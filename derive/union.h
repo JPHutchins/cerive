@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "new.h"
+
 /*
  * Generic tagged-union helpers. A variant token names three things in three
  * different C namespaces: the union member, the member's struct type, and -- with

@@ -92,6 +92,27 @@ static int hashing(void) {
 	return fails;
 }
 
+static int fluent_construct(void) {
+	int fails = 0;
+
+	Point const p = NEW(Point, .x = 3, .y = 4);
+	CHECK(Point_eq(&p, &(Point){.x = 3, .y = 4}));
+
+	Frame const f = NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
+	CHECK(Frame_eq(&f, &(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7}));
+
+	Frame const partial = NEW(Frame, .id = 7);
+	CHECK(Frame_eq(&partial, &(Frame){.id = 7}));
+	CHECK(partial.edge.a.x == 0 && partial.edge.b.y == 0);
+
+	Point a = NEW(Point, .x = 1, .y = 2);
+	Point *rows[] = {&a};
+	Span const s = NEW(Span, .first = &a, .rows = rows, .len = 1);
+	CHECK(s.first == &a && s.rows == rows && s.len == 1);
+
+	return fails;
+}
+
 static int nested_composition(void) {
 	int fails = 0;
 
@@ -183,6 +204,7 @@ int main(void) {
 		flat_struct()
 		+ total_order()
 		+ hashing()
+		+ fluent_construct()
 		+ pointer_fields()
 		+ nested_composition()
 		+ debug_buffer_contract()

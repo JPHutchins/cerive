@@ -12,6 +12,7 @@
 
 int study_point_debug(Point const *const s, char *const b, size_t const n) { return Point_debug(s, b, n); }
 Point study_point_new(int32_t const x, int32_t const y) { return Point_new(x, y); }
+Point study_point_new_lit(int32_t const x, int32_t const y) { return NEW(Point, .x = x, .y = y); }
 Point study_point_default(void) { return Point_default(); }
 bool study_point_eq(Point const *const a, Point const *const b) { return Point_eq(a, b); }
 enum ordering study_point_cmp(Point const *const a, Point const *const b) { return Point_cmp(a, b); }
@@ -19,6 +20,7 @@ size_t study_point_hash(Point const *const s) { return Point_hash(s); }
 
 int study_frame_debug(Frame const *const s, char *const b, size_t const n) { return Frame_debug(s, b, n); }
 Frame study_frame_new(Line const e, int32_t const id) { return Frame_new(e, id); }
+Frame study_frame_new_lit(Line const e, int32_t const id) { return NEW(Frame, .edge = e, .id = id); }
 Frame study_frame_default(void) { return Frame_default(); }
 bool study_frame_eq(Frame const *const a, Frame const *const b) { return Frame_eq(a, b); }
 enum ordering study_frame_cmp(Frame const *const a, Frame const *const b) { return Frame_cmp(a, b); }
