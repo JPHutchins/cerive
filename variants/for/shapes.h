@@ -11,6 +11,7 @@ DERIVE_NEW(Point)
 DERIVE_DEFAULT(Point)
 DERIVE_PARTIAL_EQ(Point)
 DERIVE_ORD(Point)
+DERIVE_HASH(Point)
 
 #define Line_FIELDS (STRUCT, Point, a), (STRUCT, Point, b)
 DERIVE_STRUCT(Line);
@@ -19,6 +20,7 @@ DERIVE_NEW(Line)
 DERIVE_DEFAULT(Line)
 DERIVE_PARTIAL_EQ(Line)
 DERIVE_ORD(Line)
+DERIVE_HASH(Line)
 
 #define Frame_FIELDS (STRUCT, Line, edge), (SCALAR, int32_t, id)
 DERIVE_STRUCT(Frame);
@@ -27,6 +29,7 @@ DERIVE_NEW(Frame)
 DERIVE_DEFAULT(Frame)
 DERIVE_PARTIAL_EQ(Frame)
 DERIVE_ORD(Frame)
+DERIVE_HASH(Frame)
 
 #define Span_FIELDS (PTR, Point, first), (PTR, Point *, rows), (SCALAR, int32_t, len)
 DERIVE_STRUCT(Span);
@@ -35,6 +38,7 @@ DERIVE_NEW(Span)
 DERIVE_DEFAULT(Span)
 DERIVE_PARTIAL_EQ(Span)
 DERIVE_ORD(Span)
+DERIVE_HASH(Span)
 
 #define Shape_VARIANTS Point, Line, Frame
 DERIVE_UNION(Shape);

@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "fmt.h"
+#include "hash.h"
 #include "ord.h"
 #include "union.h"
 
@@ -86,6 +87,17 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 	static inline enum ordering T##_cmp(T const *const a, T const *const b) { \
 		T##_FIELDS(HY_ORD) \
 		return ordering_equal; \
+	}
+
+#define HY_HASH(kind, ...) HY_HASH_##kind(__VA_ARGS__)
+#define HY_HASH_SCALAR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define HY_HASH_STRUCT(type, name) h = hash_mix(h, type##_hash(&self->name));
+#define HY_HASH_PTR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define DERIVE_HASH(T) \
+	static inline size_t T##_hash(T const *const self) { \
+		size_t h = hash_offset; \
+		T##_FIELDS(HY_HASH) \
+		return h; \
 	}
 
 #define HY_DBG(kind, ...) HY_DBG_##kind(__VA_ARGS__)

@@ -78,6 +78,20 @@ static int pointer_fields(void) {
 	return fails;
 }
 
+static int hashing(void) {
+	int fails = 0;
+
+	Point const p = Point_new(3, 4);
+	CHECK(Point_hash(&p) == Point_hash(&(Point){.x = 3, .y = 4}));
+	CHECK(Point_hash(&p) != Point_hash(&(Point){.x = 4, .y = 3}));
+
+	Frame const f = Frame_new(Line_new(Point_new(1, 2), Point_new(3, 4)), 7);
+	CHECK(Frame_hash(&f) == Frame_hash(&(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7}));
+	CHECK(Frame_hash(&f) != Frame_hash(&(Frame){.edge = {.a = {1, 2}, .b = {3, 4}}, .id = 8}));
+
+	return fails;
+}
+
 static int nested_composition(void) {
 	int fails = 0;
 
@@ -168,6 +182,7 @@ int main(void) {
 	int const fails =
 		flat_struct()
 		+ total_order()
+		+ hashing()
 		+ pointer_fields()
 		+ nested_composition()
 		+ debug_buffer_contract()

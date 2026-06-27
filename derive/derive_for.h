@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "fmt.h"
+#include "hash.h"
 #include "ord.h"
 #include "union.h"
 
@@ -103,6 +104,18 @@ static inline char *derive_at(char *const buf, size_t const n, int const off) {
 	static inline enum ordering T##_cmp(T const *const a, T const *const b) { \
 		FOR_EACH(FOR_ORD, T##_FIELDS) \
 		return ordering_equal; \
+	}
+
+#define FOR_HASH(f) FOR_HASH2 f
+#define FOR_HASH2(kind, ...) FOR_HASH_##kind(__VA_ARGS__)
+#define FOR_HASH_SCALAR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define FOR_HASH_STRUCT(type, name) h = hash_mix(h, type##_hash(&self->name));
+#define FOR_HASH_PTR(type, name) h = hash_bytes(h, &self->name, sizeof self->name);
+#define DERIVE_HASH(T) \
+	static inline size_t T##_hash(T const *const self) { \
+		size_t h = hash_offset; \
+		FOR_EACH(FOR_HASH, T##_FIELDS) \
+		return h; \
 	}
 
 #define FOR_DBG(f) FOR_DBG2 f

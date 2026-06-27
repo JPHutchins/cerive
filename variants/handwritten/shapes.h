@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "hash.h"
 #include "ord.h"
 #include "union.h"
 
@@ -52,6 +53,12 @@ static inline enum ordering Point_cmp(Point const *const a, Point const *const b
 	}
 	return ordering_equal;
 }
+static inline size_t Point_hash(Point const *const self) {
+	size_t h = hash_offset;
+	h = hash_bytes(h, &self->x, sizeof self->x);
+	h = hash_bytes(h, &self->y, sizeof self->y);
+	return h;
+}
 
 typedef struct Line {
 	Point a;
@@ -89,6 +96,12 @@ static inline enum ordering Line_cmp(Line const *const a, Line const *const b) {
 	}
 	return ordering_equal;
 }
+static inline size_t Line_hash(Line const *const self) {
+	size_t h = hash_offset;
+	h = hash_mix(h, Point_hash(&self->a));
+	h = hash_mix(h, Point_hash(&self->b));
+	return h;
+}
 
 typedef struct Frame {
 	Line edge;
@@ -123,6 +136,12 @@ static inline enum ordering Frame_cmp(Frame const *const a, Frame const *const b
 		}
 	}
 	return ordering_equal;
+}
+static inline size_t Frame_hash(Frame const *const self) {
+	size_t h = hash_offset;
+	h = hash_mix(h, Line_hash(&self->edge));
+	h = hash_bytes(h, &self->id, sizeof self->id);
+	return h;
 }
 
 typedef struct Span {
@@ -166,6 +185,13 @@ static inline enum ordering Span_cmp(Span const *const a, Span const *const b) {
 		}
 	}
 	return ordering_equal;
+}
+static inline size_t Span_hash(Span const *const self) {
+	size_t h = hash_offset;
+	h = hash_bytes(h, &self->first, sizeof self->first);
+	h = hash_bytes(h, &self->rows, sizeof self->rows);
+	h = hash_bytes(h, &self->len, sizeof self->len);
+	return h;
 }
 
 enum Shape_tag : uint8_t { Point_tag, Line_tag, Frame_tag };
