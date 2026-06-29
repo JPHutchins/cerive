@@ -107,28 +107,27 @@ add_custom_target(report
 add_custom_target(evidence)
 add_dependencies(evidence report)
 
-# Clang static analyzer (scan-build). Uses a native clang build in a separate
-# directory — the ARM cross-compiler is GCC-only, so analysis runs on the host.
-# Requires: nix develop, `clang` and `scan-build` on PATH.
-find_program(SCAN_BUILD scan-build)
-if(SCAN_BUILD)
-	set(CLANG_ANALYZE_DIR ${CMAKE_BINARY_DIR}-clang-analyze)
+# Clang static analyzer. Runs clang --analyze directly over each .c source file
+# since --analyze doesn't emit object files (it replaces codegen with analysis).
+# GCC -fanalyzer covers ARM analysis; this covers clang-only checkers on the host.
+# Requires: nix develop, `clang` on PATH.
+find_program(CLANG clang)
+if(CLANG)
+	set(CLANG_ANALYZE_FLAGS -std=c23 -Wall -Wextra -Wdouble-promotion -Werror
+		-Qunused-arguments
+		-I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/variants/cerive
+		--analyze -Xclang -analyzer-output=text)
 	add_custom_target(clang-analyze
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CLANG_ANALYZE_DIR}
-		COMMAND ${CMAKE_COMMAND}
-			-DCMAKE_C_COMPILER=clang
-			-DCMAKE_C_STANDARD=23
-			-DCMAKE_C_STANDARD_REQUIRED=ON
-			-DCMAKE_C_FLAGS="-Wall -Wextra -Wdouble-promotion"
-			-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-			-B ${CLANG_ANALYZE_DIR}
-			-S ${CMAKE_SOURCE_DIR}
-		COMMAND ${SCAN_BUILD} --status-bugs
-			cmake --build ${CLANG_ANALYZE_DIR}
-		COMMENT "clang-analyze: scan-build on native clang build"
+		COMMAND ${CLANG} ${CLANG_ANALYZE_FLAGS} -c
+			${CMAKE_SOURCE_DIR}/src/cerive.c
+			${CMAKE_SOURCE_DIR}/tests/test_shapes.c
+			${CMAKE_SOURCE_DIR}/tests/test_scalars.c
+			${CMAKE_SOURCE_DIR}/tests/test_compile_time.c
+			${CMAKE_SOURCE_DIR}/study/study.c
+		COMMENT "clang-analyze: clang --analyze over all .c files"
 		VERBATIM USES_TERMINAL)
 else()
 	add_custom_target(clang-analyze
-		COMMAND ${CMAKE_COMMAND} -E echo "scan-build not found (install clang)"
+		COMMAND ${CMAKE_COMMAND} -E echo "clang not found (install clang)"
 		VERBATIM)
 endif()

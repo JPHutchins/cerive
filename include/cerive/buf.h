@@ -10,4 +10,8 @@
  */
 
 size_t cerive_buf_remaining(size_t cap, int off);
-__attribute__((nonnull(1))) char * cerive_buf_at(char * buf, size_t cap, int off);
+/*
+ * buf MAY be NULL when n==0 (the buffer-size contract: caller queries the
+ * needed size, and snprintf with a NULL buffer and zero size is defined).
+ */
+char * cerive_buf_at(char * buf, size_t cap, int off);

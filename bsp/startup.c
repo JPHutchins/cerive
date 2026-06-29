@@ -22,10 +22,13 @@ void Reset_Handler(void) {
 	_exit(main());
 }
 
-void Default_Handler(void) {
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Wanalyzer-infinite-loop\"")
+__attribute__((__noreturn__)) void Default_Handler(void) {
 	for (; ; ) {
 	}
 }
+_Pragma("GCC diagnostic pop")
 
 typedef void (*vector_t)(void);
 

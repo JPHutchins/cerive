@@ -31,12 +31,15 @@ int _write(int const fd, char const * const buf, int const len) {
 	return len - (int) semihost(sys_write, (void *) args);
 }
 
-void _exit(int const code) {
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Wanalyzer-infinite-loop\"")
+__attribute__((__noreturn__)) void _exit(int const code) {
 	long const args[2] = {adp_stopped_application_exit, code};
 	semihost(sys_exit_extended, (void *) args);
 	for (; ; ) {
 	}
 }
+_Pragma("GCC diagnostic pop")
 
 int _read(int const fd, char * const buf, int const len) {
 	(void) fd, (void) buf, (void) len;

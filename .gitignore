@@ -1,4 +1,6 @@
 /build/
+/build-analyze/
+/build-clang-analyze/
 result
 result-*
 .direnv/
