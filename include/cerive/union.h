@@ -128,8 +128,27 @@
 		for (variant const * const bind = &cerive_matched->variant, *cerive_case_once = bind; \
 			 cerive_case_once; cerive_case_once = 0)
 
+/*
+ * if-let: test a single variant and bind it in one construct. No switch, no
+ * nested loops -- just a single for-loop trick for the scoped binding.
+ *
+ *   CERIVE_IF_LET (shape, Point, p) {
+ *       use(p->x);
+ *   } else {
+ *       // shape is not Point
+ *   }
+ *
+ * WARNING: same `continue` caveat as CASE -- a bare `continue` inside the body
+ * continues the macro's inner `for` loop (which exits), not any outer loop.
+ */
+#define CERIVE_IF_LET(instance, variant, bind) \
+	if (CERIVE_IS(instance, variant)) \
+		for (variant const * const bind = &(instance).variant, *cerive_il_once = bind; \
+			 cerive_il_once; cerive_il_once = NULL)
+
 /* Short aliases (the one concession to brevity); #define CERIVE_NO_SHORT_NAMES to opt out. */
 #ifndef CERIVE_NO_SHORT_NAMES
 	#define MATCH CERIVE_MATCH
 	#define CASE CERIVE_CASE
+	#define IF_LET CERIVE_IF_LET
 #endif

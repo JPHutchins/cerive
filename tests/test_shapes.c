@@ -434,6 +434,38 @@ static int nested_union_variant(void) {
 
 	return fails;
 }
+static int if_let(void) {
+	int fails = 0;
+
+	Shape const point = Shape_new(Point, .x = 7, .y = 8);
+	Shape const frame = Shape_new(Frame, .edge = Line_default(), .id = 3);
+	int32_t got = -1;
+
+	IF_LET (point, Point, p) {
+		got = p->x;
+	} else {
+		got = -2;
+	}
+	CHECK(got == 7);
+
+	IF_LET (frame, Frame, f) {
+		got = f->id;
+	} else {
+		got = -2;
+	}
+	CHECK(got == 3);
+
+	/* else branch taken when variant doesn't match. */
+	got = -1;
+	IF_LET (point, Frame, f) {
+		got = 99;
+	} else {
+		got = 42;
+	}
+	CHECK(got == 42);
+
+	return fails;
+}
 #endif /* CERIVE_HAS_EXTRA_TYPES */
 
 int main(void) {
@@ -458,6 +490,7 @@ int main(void) {
 		+ debug_exact_buffer()
 		+ match_with_break()
 		+ nested_union_variant()
+		+ if_let()
 #endif
 		;
 
