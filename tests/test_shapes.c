@@ -96,7 +96,7 @@ static int const_usage(void) {
 	int fails = 0;
 
 	Frame const f = CERIVE_NEW(Frame, .edge = {.a = {1, 2}, .b = {3, 4}}, .id = 7);
-	Frame const *const pf = &f;
+	Frame const * const pf = &f;
 	CHECK(pf->id == 7);
 
 	char buf[128];
@@ -180,7 +180,7 @@ static int debug_buffer_contract(void) {
 	int fails = 0;
 
 	Point const p = Point_new(42, 7);
-	char const *const expect = "Point { x=42 y=7 }";
+	char const * const expect = "Point { x=42 y=7 }";
 	int const need = (int) strlen(expect);
 
 	CHECK(Point_debug(&p, NULL, 0) == need);
@@ -201,7 +201,11 @@ static int union_construct_and_compare(void) {
 	int fails = 0;
 
 	Shape const point = Shape_new(Point, .x = 1, .y = 2);
-	Shape const frame = Shape_new(Frame, .edge = Line_new(Point_new(1, 2), Point_new(3, 4)), .id = 7);
+	Shape const frame = Shape_new(
+		Frame,
+		.edge = Line_new(Point_new(1, 2), Point_new(3, 4)),
+		.id = 7
+	);
 
 	CHECK(CERIVE_IS(point, Point) && !CERIVE_IS(point, Frame));
 	CHECK(point.Point.x == 1 && frame.Frame.id == 7);

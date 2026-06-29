@@ -12,12 +12,12 @@ size_t cerive_buf_remaining(size_t const cap, int const off) {
 	return (off >= 0 && (size_t) off < cap) ? cap - (size_t) off : 0;
 }
 
-char *cerive_buf_at(char *const buf, size_t const cap, int const off) {
+char * cerive_buf_at(char * const buf, size_t const cap, int const off) {
 	return buf + ((off >= 0 && (size_t) off < cap) ? (size_t) off : cap);
 }
 
-size_t cerive_hash_bytes(size_t hash, void const *const data, size_t const len) {
-	unsigned char const *const bytes = data;
+size_t cerive_hash_bytes(size_t hash, void const * const data, size_t const len) {
+	unsigned char const * const bytes = data;
 	for (size_t i = 0; i < len; ++i) {
 		hash = (hash ^ bytes[i]) * cerive_hash_prime;
 	}
