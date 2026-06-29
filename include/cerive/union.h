@@ -13,9 +13,12 @@
 #else
 #define CERIVE_P_assert(ptr) \
 	do { \
-		if (!(ptr)) { \
+		_Pragma("GCC diagnostic push") \
+		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
+		if ((uintptr_t)(ptr) == 0) { \
 			__builtin_trap(); \
 		} \
+		_Pragma("GCC diagnostic pop") \
 	} while (0)
 #endif
 #endif
@@ -54,6 +57,7 @@
 
 #ifdef CERIVE_NO_DEBUG
 #define CERIVE_UNION_Debug(T) \
+	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		(void) self; \
 		(void) buf; \
@@ -62,6 +66,7 @@
 	}
 #else
 #define CERIVE_UNION_Debug(T) \
+	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		CERIVE_P_assert(self); \
 		switch (self->tag) { \
@@ -72,6 +77,7 @@
 #endif
 
 #define CERIVE_UNION_PartialEq(T) \
+	__attribute__((nonnull(1, 2))) \
 	static inline bool T##_eq(T const * const a, T const * const b) { \
 		CERIVE_P_assert(a); \
 		CERIVE_P_assert(b); \

@@ -43,9 +43,12 @@
 #else
 #define CERIVE_P_assert(ptr) \
 	do { \
-		if (!(ptr)) { \
+		_Pragma("GCC diagnostic push") \
+		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
+		if ((uintptr_t)(ptr) == 0) { \
 			__builtin_trap(); \
 		} \
+		_Pragma("GCC diagnostic pop") \
 	} while (0)
 #endif
 
@@ -83,6 +86,7 @@
 #define CERIVE_P_eq_const_record(type, name) CERIVE_P_via_record(CERIVE_P_eq_record, type, name)
 #define CERIVE_P_eq_pointer(star, type, name) &&a->name == b->name
 #define CERIVE_PartialEq(T) \
+	__attribute__((nonnull(1, 2))) \
 	static inline bool T##_eq(T const * const a, T const * const b) { \
 		CERIVE_P_assert(a); \
 		CERIVE_P_assert(b); \
@@ -114,6 +118,7 @@
 		} \
 	}
 #define CERIVE_Ord(T) \
+	__attribute__((nonnull(1, 2))) \
 	static inline enum cerive_ordering T##_cmp(T const * const a, T const * const b) { \
 		CERIVE_P_assert(a); \
 		CERIVE_P_assert(b); \
@@ -127,6 +132,7 @@
 #define CERIVE_P_hash_const_record(type, name) CERIVE_P_via_record(CERIVE_P_hash_record, type, name)
 #define CERIVE_P_hash_pointer(star, type, name) hash = cerive_hash_bytes(hash, &self->name, sizeof self->name);
 #define CERIVE_Hash(T) \
+	__attribute__((nonnull(1))) \
 	static inline size_t T##_hash(T const * const self) { \
 		CERIVE_P_assert(self); \
 		size_t hash = cerive_hash_offset; \
@@ -156,6 +162,7 @@
  */
 #ifdef CERIVE_NO_DEBUG
 #define CERIVE_Debug(T) \
+	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		(void) self; \
 		(void) buf; \
@@ -165,6 +172,7 @@
 #else
 /* Total debug output must fit in INT_MAX. */
 #define CERIVE_Debug(T) \
+	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		CERIVE_P_assert(self); \
 		int off = 0; \
