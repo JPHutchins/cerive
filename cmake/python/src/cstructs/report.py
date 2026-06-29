@@ -52,7 +52,7 @@ def render_report(
 
     diffs: list[str] = []
     strat_breaks: list[str] = []
-    base_breaks: list[str] = []
+    base_mismatches: list[str] = []
     body: list[str] = []
 
     for cpu in cpus:
@@ -81,11 +81,21 @@ def render_report(
                     continue
                 cand_here = [v for v in candidates if got[v] is not None]
                 strat_diff = len({got[v] for v in cand_here}) > 1
-                (strat_breaks if strat_diff else base_breaks).append(f"{fn}@{opt}")
-                sz_a = sizes.get((candidates[0], cpu, opt, fn)) if candidates else None
-                sz_b = sizes.get((baseline, cpu, opt, fn))
-                delta = f"{sz_a - sz_b:+d}" if sz_a is not None and sz_b is not None else "≠"
-                cells.append(("⚠" if strat_diff else "") + delta)
+                if strat_diff:
+                    strat_breaks.append(f"{fn}@{opt}")
+                    cells.append("⚠")
+                else:
+                    sz_a = sizes.get((candidates[0], cpu, opt, fn)) if candidates else None
+                    sz_b = sizes.get((baseline, cpu, opt, fn))
+                    delta = f"{sz_a - sz_b:+d}" if sz_a is not None and sz_b is not None else "≠"
+                    cells.append(delta)
+                    base_mismatches.append(f"{fn}@{opt}")
+                baseline_got = got.get(baseline)
+                if baseline_got is not None and any(
+                    got[v] is not None and got[v] != baseline_got
+                    for v in cand_here
+                ):
+                    base_mismatches.append(f"{fn}@{opt}")
                 x, y = (cand_here[0], cand_here[1]) if strat_diff and len(cand_here) >= 2 else (candidates[0], baseline)
                 cx, cy = canon.get((x, cpu, opt, fn)), canon.get((y, cpu, opt, fn))
                 if cx is not None and cy is not None:
@@ -109,7 +119,7 @@ def render_report(
         ]
     head += [
         f"**{cand_label} ≡ {baseline}:** "
-        + ("✅ identical everywhere" if not base_breaks else "⚠️ differ at " + ", ".join(dict.fromkeys(base_breaks))),
+        + ("✅ identical everywhere" if not base_mismatches else "⚠️ differ at " + ", ".join(dict.fromkeys(base_mismatches))),
         "",
     ]
     if diffs:

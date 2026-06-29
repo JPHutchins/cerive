@@ -7,9 +7,11 @@ _COMMENT = re.compile(r"@.*$")
 _DROP = re.compile(
     r"^\s*\.(cfi_|loc\b|file\b|ident\b|size\b|type\b|globl?\b|global\b|weak\b"
     r"|syntax\b|thumb|arm\b|arch\b|fpu\b|cpu\b|eabi_attribute\b|fnstart\b|fnend\b"
-    r"|save\b|pad\b|setfp\b|movsp\b|code\b|align\b|p2align\b|section\b|text\b|data\b)"
+    r"|save\b|pad\b|setfp\b|movsp\b|code\b|align\b|p2align\b|balign\b|ltorg\b|pool\b"
+    r"|section\b|text\b|data\b)"
 )
 _FUNC = re.compile(r"^\s*\.type\s+(\w+),\s*%function")
+_THUMB_FUNC = re.compile(r"^\s*\.thumb_func\s*$")
 # The Debug cursor helpers differ in name between the derived (cerive_buf_*) and
 # hand-written (hw_*) variants; collapse both to one token so -O0 asm compares.
 _HELPERS = {
@@ -27,15 +29,20 @@ def split_functions(asm: str) -> dict[str, str]:
 
     >>> split_functions("\\t.type f, %function\\nf:\\n\\tnop\\n\\t.size f, .-f\\n")["f"].strip()
     'nop'
+    >>> split_functions("\\t.thumb_func\\nf:\\n\\tnop\\n\\t.size f, .-f\\n")["f"].strip()
+    'nop'
     """
     funcs: dict[str, str] = {}
     pending: str | None = None
     current: str | None = None
     body: list[str] = []
+    thumb_func_pending = False
     for line in asm.splitlines():
         head = _FUNC.match(line)
         if head is not None:
             pending = head.group(1)
+        elif _THUMB_FUNC.match(line):
+            thumb_func_pending = True
         elif pending is not None and line.strip() == f"{pending}:":
             current, body, pending = pending, [], None
         elif current is not None and re.match(rf"^\s*\.size\s+{re.escape(current)}\b", line):
@@ -43,6 +50,11 @@ def split_functions(asm: str) -> dict[str, str]:
             current = None
         elif current is not None:
             body.append(line)
+        elif thumb_func_pending:
+            clean = line.strip()
+            if clean.endswith(":") and re.match(r"^[.\w]+:$", clean):
+                current, body = clean[:-1], []
+                thumb_func_pending = False
     return funcs
 
 

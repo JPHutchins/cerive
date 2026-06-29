@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "buf.h"
@@ -31,6 +32,17 @@
 #define CERIVE_VERSION_MINOR 1
 #define CERIVE_VERSION_PATCH 0
 
+#ifdef CERIVE_NO_ASSERT
+#define CERIVE_P_assert(ptr) ((void) 0)
+#else
+#define CERIVE_P_assert(ptr) \
+	do { \
+		if (!(ptr)) { \
+			__builtin_trap(); \
+		} \
+	} while (0)
+#endif
+
 #define CERIVE_P_drop_first(...) CERIVE_P_drop_first_(__VA_ARGS__)
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__
 
@@ -53,11 +65,11 @@
 #define CERIVE_P_init_pointer(star, type, name) .name = name,
 #define CERIVE_Constructor(T) \
 	static inline T T##_new(CERIVE_P_drop_first(T##_FIELDS(CERIVE_P_param))) { \
-		return (T){T##_FIELDS(CERIVE_P_init)}; \
+		return (T) {T##_FIELDS(CERIVE_P_init)}; \
 	}
 
 #define CERIVE_Default(T) \
-	static inline T T##_default(void) { return (T){}; }
+	static inline T T##_default(void) { return (T) {}; }
 
 #define CERIVE_P_eq(...) CERIVE_P_dispatch(CERIVE_P_eq, __VA_ARGS__)
 #define CERIVE_P_eq_scalar(type, name) &&a->name == b->name
@@ -65,7 +77,9 @@
 #define CERIVE_P_eq_const_record(type, name) CERIVE_P_via_record(CERIVE_P_eq_record, type, name)
 #define CERIVE_P_eq_pointer(star, type, name) &&a->name == b->name
 #define CERIVE_PartialEq(T) \
-	static inline bool T##_eq(T const *const a, T const *const b) { \
+	static inline bool T##_eq(T const * const a, T const * const b) { \
+		CERIVE_P_assert(a); \
+		CERIVE_P_assert(b); \
 		return true T##_FIELDS(CERIVE_P_eq); \
 	}
 
@@ -87,13 +101,16 @@
 #define CERIVE_P_ord_const_record(type, name) CERIVE_P_via_record(CERIVE_P_ord_record, type, name)
 #define CERIVE_P_ord_pointer(star, type, name) \
 	{ \
-		enum cerive_ordering const order = (a->name > b->name) - (a->name < b->name); \
+		enum cerive_ordering const order = ((uintptr_t)(a->name) > (uintptr_t)(b->name)) \
+			- ((uintptr_t)(a->name) < (uintptr_t)(b->name)); \
 		if (order != cerive_equal) { \
 			return order; \
 		} \
 	}
 #define CERIVE_Ord(T) \
-	static inline enum cerive_ordering T##_cmp(T const *const a, T const *const b) { \
+	static inline enum cerive_ordering T##_cmp(T const * const a, T const * const b) { \
+		CERIVE_P_assert(a); \
+		CERIVE_P_assert(b); \
 		T##_FIELDS(CERIVE_P_ord) \
 		return cerive_equal; \
 	}
@@ -104,7 +121,8 @@
 #define CERIVE_P_hash_const_record(type, name) CERIVE_P_via_record(CERIVE_P_hash_record, type, name)
 #define CERIVE_P_hash_pointer(star, type, name) hash = cerive_hash_bytes(hash, &self->name, sizeof self->name);
 #define CERIVE_Hash(T) \
-	static inline size_t T##_hash(T const *const self) { \
+	static inline size_t T##_hash(T const * const self) { \
+		CERIVE_P_assert(self); \
 		size_t hash = cerive_hash_offset; \
 		T##_FIELDS(CERIVE_P_hash) \
 		return hash; \
@@ -118,12 +136,18 @@
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), #name "="); \
 	off += type##_debug(&self->name, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off)); \
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
-#define CERIVE_P_debug_const_record(type, name) CERIVE_P_via_record(CERIVE_P_debug_record, type, name)
+#define CERIVE_P_debug_const_record(type, name) CERIVE_P_via_record( \
+	CERIVE_P_debug_record, \
+	type, \
+	name \
+)
 #define CERIVE_P_debug_pointer(star, type, name) \
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), \
 		#name "=%p ", (void *) self->name);
+/* Total debug output must fit in INT_MAX. */
 #define CERIVE_Debug(T) \
-	static inline int T##_debug(T const *const self, char *const buf, size_t const n) { \
+	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+		CERIVE_P_assert(self); \
 		int off = 0; \
 		off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), #T " { "); \
 		T##_FIELDS(CERIVE_P_debug) \

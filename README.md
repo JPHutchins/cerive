@@ -16,7 +16,7 @@ plus the named methods:
 #define Frame_FIELDS(X) \
 	X(Line, edge) \
 	X(int32_t, id)
-CERIVE(Frame, Struct, Debug, Ctor, Default, PartialEq, Ord, Hash)
+CERIVE(Frame, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 ```
 
 Tagged unions are derived the same way from a variant list, where each variant

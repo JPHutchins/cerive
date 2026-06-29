@@ -1,6 +1,8 @@
 #include <cerive/buf.h>
 #include <cerive/hash.h>
 
+_Static_assert(sizeof(int) <= sizeof(size_t), "size_t must be at least as wide as int");
+
 /*
  * The shared runtime: the handful of non-generated helpers the generated <T>_debug
  * and <T>_hash call. Compiled once here so multiple translation units share a

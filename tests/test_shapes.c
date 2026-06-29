@@ -3,6 +3,10 @@
 #include <string.h>
 
 #include "shapes.h"
+#if __has_include("test_types.h")
+#include "test_types.h"
+#define CERIVE_HAS_EXTRA_TYPES 1
+#endif
 
 #define CHECK(cond) \
 	do { \
@@ -246,6 +250,168 @@ static int union_match(void) {
 	return fails;
 }
 
+#if CERIVE_HAS_EXTRA_TYPES
+static int triple_pointer(void) {
+	int fails = 0;
+
+	Point p = Point_new(1, 2);
+	Point *p_ptr = &p;
+	Point **pp = &p_ptr;
+
+	TripleP const t = TripleP_new(pp, 10);
+	CHECK(t.ptr == pp && t.seq == 10);
+	CHECK((**t.ptr).x == 1);
+
+	CHECK(TripleP_eq(&t, &(TripleP){.ptr = pp, .seq = 10}));
+	CHECK(!TripleP_eq(&t, &(TripleP){.ptr = pp, .seq = 99}));
+
+	CHECK(TripleP_cmp(&t, &(TripleP){.ptr = pp, .seq = 10}) == cerive_equal);
+	CHECK(TripleP_cmp(&t, &(TripleP){.ptr = pp, .seq = 11}) == cerive_less);
+	CHECK(TripleP_cmp(&t, &(TripleP){.ptr = pp, .seq = 9}) == cerive_greater);
+
+	CHECK(TripleP_hash(&t) == TripleP_hash(&(TripleP){.ptr = pp, .seq = 10}));
+	CHECK(TripleP_hash(&t) != TripleP_hash(&(TripleP){.ptr = pp, .seq = 0}));
+
+	char buf[64];
+	TripleP_debug(&t, buf, sizeof buf);
+	CHECK(strstr(buf, "TripleP { ptr=") == buf);
+
+	return fails;
+}
+
+static int many_variant_union(void) {
+	int fails = 0;
+
+	Many const m0 = Many_new(Alpha, .val = 10);
+	Many const m1 = Many_new(Beta, .val = 2.5f);
+	Many const m2 = Many_new(Gamma, .val = 3.14);
+	Many const m3 = Many_new(Delta, .val = 'X');
+	Many const m4 = Many_new(Epsilon, .val = 999);
+
+	CHECK(CERIVE_IS(m0, Alpha) && !CERIVE_IS(m0, Beta));
+	CHECK(m0.Alpha.val == 10);
+	CHECK(m1.Beta.val == 2.5);
+	CHECK(m2.Gamma.val == 3.14);
+	CHECK(m3.Delta.val == 'X');
+	CHECK(m4.Epsilon.val == 999);
+
+	CHECK(Many_eq(&m0, &Many_new(Alpha, .val = 10)));
+	CHECK(!Many_eq(&m0, &Many_new(Alpha, .val = 99)));
+	CHECK(!Many_eq(&m0, &m1));
+
+	MATCH (m0) {
+		CASE (Alpha, a) { CHECK(a->val == 10); }
+		CASE (Beta, b) { CHECK(!"should not reach"); }
+		CASE (Gamma, g) { CHECK(!"should not reach"); }
+		CASE (Delta, d) { CHECK(!"should not reach"); }
+		CASE (Epsilon, e) { CHECK(!"should not reach"); }
+	}
+
+	return fails;
+}
+
+static int single_variant_union(void) {
+	int fails = 0;
+
+	Single const s = Single_new(Only, .x = 7, .y = 8);
+	CHECK(CERIVE_IS(s, Only));
+	CHECK(s.Only.x == 7 && s.Only.y == 8);
+
+	CHECK(Single_eq(&s, &Single_new(Only, .x = 7, .y = 8)));
+	CHECK(!Single_eq(&s, &Single_new(Only, .x = 7, .y = 9)));
+
+	return fails;
+}
+
+static int nested_union(void) {
+	int fails = 0;
+
+	Shape const point = Shape_new(Point, .x = 1, .y = 2);
+	ShapeWrap const w = ShapeWrap_new(point, 42);
+
+	CHECK(w.inner.Point.x == 1 && w.extra == 42);
+
+	CHECK(ShapeWrap_eq(&w, &(ShapeWrap){.inner = point, .extra = 42}));
+	CHECK(!ShapeWrap_eq(&w, &(ShapeWrap){.inner = point, .extra = 99}));
+
+	char buf[128];
+	ShapeWrap_debug(&w, buf, sizeof buf);
+	CHECK(strcmp(buf, "ShapeWrap { inner=Point { x=1 y=2 } extra=42 }") == 0);
+
+	return fails;
+}
+
+static int ord_short_circuit_3fields(void) {
+	int fails = 0;
+
+	Triple const t = Triple_new(1, 2, 3);
+
+	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 2, .c = 3}) == cerive_equal);
+	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 2, .c = 5}) == cerive_less);
+	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 2, .c = 0}) == cerive_greater);
+
+	/* Different 'a' should short-circuit before checking 'b' or 'c'. */
+	CHECK(Triple_cmp(&t, &(Triple){.a = 0, .b = 9, .c = 9}) == cerive_greater);
+	CHECK(Triple_cmp(&t, &(Triple){.a = 2, .b = 0, .c = 0}) == cerive_less);
+
+	/* Same 'a', different 'b' should short-circuit before 'c'. */
+	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 1, .c = 9}) == cerive_greater);
+	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 3, .c = 0}) == cerive_less);
+
+	return fails;
+}
+
+static int debug_exact_buffer(void) {
+	int fails = 0;
+
+	Triple const t = (Triple){.a = 100, .b = 200, .c = 300};
+	char const * const expect = "Triple { a=100 b=200 c=300 }";
+	int const need = (int) strlen(expect);
+
+	CHECK(Triple_debug(&t, NULL, 0) == need);
+
+	/* Buffer of exactly need+1 bytes: fits with NUL terminator. */
+	char exact[need + 1];
+	CHECK(Triple_debug(&t, exact, sizeof exact) == need);
+	CHECK(strcmp(exact, expect) == 0);
+	CHECK(exact[need] == '\0');
+
+	return fails;
+}
+
+static int match_with_break(void) {
+	int fails = 0;
+
+	Shape const shapes[] = {
+		Shape_new(Point, .x = 5, .y = 6),
+	};
+
+	/* A break inside an inner for-loop inside a CASE body must only break the
+	 * inner loop, not the MATCH construct (whose for-loop trick wraps the
+	 * switch). */
+	int32_t got = -1;
+	MATCH (shapes[0]) {
+		CASE (Point, p) {
+			for (int j = 0; j < 10; ++j) {
+				if (j >= 1) {
+					break;
+				}
+			}
+			got = p->x;
+		}
+		CASE (Line, l) {
+			got = -2;
+		}
+		CASE (Frame, f) {
+			got = -3;
+		}
+	}
+	CHECK(got == 5);
+
+	return fails;
+}
+#endif /* CERIVE_HAS_EXTRA_TYPES */
+
 int main(void) {
 	int const fails =
 		flat_struct()
@@ -258,7 +424,17 @@ int main(void) {
 		+ nested_composition()
 		+ debug_buffer_contract()
 		+ union_construct_and_compare()
-		+ union_match();
+		+ union_match()
+#if CERIVE_HAS_EXTRA_TYPES
+		+ triple_pointer()
+		+ many_variant_union()
+		+ single_variant_union()
+		+ nested_union()
+		+ ord_short_circuit_3fields()
+		+ debug_exact_buffer()
+		+ match_with_break()
+#endif
+		;
 
 	puts(fails == 0 ? "all tests passed" : "FAILURES");
 	return fails;

@@ -17,5 +17,3 @@ add_custom_command(
 	DEPENDS ${PYDIR}/uv.lock
 	COMMENT "cstructs: uv sync --frozen (uv.lock changed)"
 	VERBATIM)
-
-add_custom_target(cstructs_env DEPENDS ${CSTRUCTS_STAMP})

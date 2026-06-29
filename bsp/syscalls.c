@@ -7,9 +7,9 @@ enum {
 	adp_stopped_application_exit = 0x20026,
 };
 
-static long semihost(long const op, void *const arg) {
+static long semihost(long const op, void * const arg) {
 	register long r0 __asm__("r0") = op;
-	register void *r1 __asm__("r1") = arg;
+	register void * r1 __asm__("r1") = arg;
 	__asm__ volatile("bkpt 0xAB" : "+r"(r0) : "r"(r1) : "memory");
 	return r0;
 }
@@ -24,7 +24,7 @@ static void ensure_console(void) {
 	}
 }
 
-int _write(int const fd, char const *const buf, int const len) {
+int _write(int const fd, char const * const buf, int const len) {
 	(void) fd;
 	ensure_console();
 	long const args[3] = {console, (long) buf, len};
@@ -34,11 +34,11 @@ int _write(int const fd, char const *const buf, int const len) {
 void _exit(int const code) {
 	long const args[2] = {adp_stopped_application_exit, code};
 	semihost(sys_exit_extended, (void *) args);
-	for (;;) {
+	for (; ; ) {
 	}
 }
 
-int _read(int const fd, char *const buf, int const len) {
+int _read(int const fd, char * const buf, int const len) {
 	(void) fd, (void) buf, (void) len;
 	return 0;
 }
@@ -50,7 +50,7 @@ int _lseek(int const fd, int const off, int const whence) {
 	(void) fd, (void) off, (void) whence;
 	return 0;
 }
-int _fstat(int const fd, struct stat *const st) {
+int _fstat(int const fd, struct stat * const st) {
 	(void) fd;
 	st->st_mode = S_IFCHR;
 	return 0;
@@ -68,9 +68,9 @@ int _getpid(void) {
 }
 
 extern char _end;
-static char *heap = &_end;
-void *_sbrk(int const incr) {
-	char *const prev = heap;
+static char * heap = &_end;
+void * _sbrk(int const incr) {
+	char * const prev = heap;
 	heap += incr;
 	return prev;
 }

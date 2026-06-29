@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 # As a Zephyr module: add the include path and compile the one runtime source.
-if(DEFINED ZEPHYR_BASE)
+if(DEFINED ZEPHYR_BASE AND COMMAND zephyr_library)
 	if(CONFIG_CERIVE)
 		zephyr_library()
 		zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/cerive.c)
@@ -69,6 +69,20 @@ foreach(v ${VARIANTS})
 	target_link_libraries(study_${v} PRIVATE cerive)
 	target_include_directories(study_${v} PRIVATE variants/${v})
 endforeach()
+
+# Extended scalar tests -- use the cerive variant only (not a comparison target).
+add_executable(test_scalars tests/test_scalars.c $<TARGET_OBJECTS:bsp>)
+target_link_libraries(test_scalars PRIVATE cerive)
+target_include_directories(test_scalars PRIVATE variants/cerive)
+add_test(NAME scalars
+	COMMAND ${QEMU} -M ${QEMU_MACHINE} -nographic -semihosting
+		-kernel $<TARGET_FILE:test_scalars>)
+set_tests_properties(scalars PROPERTIES TIMEOUT 30)
+
+# Compile-time validation (compiled only, not run under QEMU).
+add_library(test_compile_time OBJECT tests/test_compile_time.c)
+target_link_libraries(test_compile_time PRIVATE cerive)
+target_include_directories(test_compile_time PRIVATE variants/cerive)
 
 include(cmake/matrix.cmake)
 foreach(v ${VARIANTS})

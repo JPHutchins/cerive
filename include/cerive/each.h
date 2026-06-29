@@ -11,12 +11,12 @@
 #define CERIVE_P_cat(a, b) CERIVE_P_cat_(a, b)
 #define CERIVE_P_cat_(a, b) a##b
 
-#define CERIVE_P_count(...) \
-	CERIVE_P_count_(__VA_ARGS__, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#define CERIVE_P_count(...) CERIVE_P_count_(__VA_ARGS__, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 #define CERIVE_P_count_(a, b, c, d, e, f, g, h, i, j, k, l, n, ...) n
 
-#define CERIVE_P_over(prefix, T, ...) \
-	__VA_OPT__(CERIVE_P_cat(CERIVE_P_over_, CERIVE_P_count(__VA_ARGS__))(prefix, T, __VA_ARGS__))
+#define CERIVE_P_over(prefix, T, ...) __VA_OPT__( \
+	CERIVE_P_cat(CERIVE_P_over_, CERIVE_P_count(__VA_ARGS__))(prefix, T, __VA_ARGS__) \
+)
 #define CERIVE_P_over_1(prefix, T, a) prefix##_##a(T)
 #define CERIVE_P_over_2(prefix, T, a, ...) prefix##_##a(T) CERIVE_P_over_1(prefix, T, __VA_ARGS__)
 #define CERIVE_P_over_3(prefix, T, a, ...) prefix##_##a(T) CERIVE_P_over_2(prefix, T, __VA_ARGS__)

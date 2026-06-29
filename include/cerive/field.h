@@ -18,6 +18,11 @@
  * its presence marks a type as scalar, and its payload is that type's printf
  * format -- one entry, no second list.
  *
+ * WARNING: Pointer fields MUST use the 3-arity form (*, Type, name). A 2-arity
+ * field whose type contains '*' -- e.g. (int *, p) -- will be misclassified as
+ * scalar because the is_scalar probe matches the leading token. Use the 3-arity
+ * form (*, int *, p) for pointer-to-pointer.
+ *
  * CERIVE_P_dispatch(prefix, field...) routes a field to the matching
  * prefix##_scalar / _record / _const_record / _pointer handler.
  */
@@ -34,8 +39,16 @@
 #define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32)
 #define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64)
 #define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu")
+#define CERIVE_P_scalar_float CERIVE_P_scalar("%g")
+#define CERIVE_P_scalar_double CERIVE_P_scalar("%g")
+#define CERIVE_P_scalar_int CERIVE_P_scalar("%d")
+#define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u")
+#define CERIVE_P_scalar_long CERIVE_P_scalar("%ld")
+#define CERIVE_P_scalar_unsigned_long CERIVE_P_scalar("%lu")
+#define CERIVE_P_scalar_long_long CERIVE_P_scalar("%lld")
+#define CERIVE_P_scalar_unsigned_long_long CERIVE_P_scalar("%llu")
 
-#define CERIVE_P_is_scalar(type) CERIVE_P_is_scalar_(CERIVE_P_scalar_##type, 0,)
+#define CERIVE_P_is_scalar(type) CERIVE_P_is_scalar_(CERIVE_P_scalar_##type, 0)
 #define CERIVE_P_is_scalar_(...) CERIVE_P_is_scalar__(__VA_ARGS__)
 #define CERIVE_P_is_scalar__(format, flag, ...) flag
 #define CERIVE_P_scalar_format(type) CERIVE_P_scalar_format_(CERIVE_P_scalar_##type)
@@ -46,25 +59,30 @@
  * Opt-in const record members. A value field whose type ends in `const` --
  * `(Point const, edge)` -> `Point const edge;` -- keeps the qualifier in the
  * declaration, but the trait-fn paste base must drop it (else `Point const##_eq`
- * corrupts). CERIVE_P_strip_const pastes a vanishing `const_cerive_unconst` onto
+ * corrupts). CERIVE_P_strip_const pastes a vanishing `const_CERIVE_P_unconst` onto
  * the type's last token, so `Point const` -> `Point` (valid only on a const-ending
  * type, the only place it is used). const-qualified scalars need no help --
  * is_scalar keys on the leading token and the format ignores the rest.
  */
-#define const_cerive_unconst
-#define CERIVE_P_strip_const(type) CERIVE_P_cat(type, _cerive_unconst)
-#define const_cerive_const_probe ~, 1,
-#define CERIVE_P_is_const(type) CERIVE_P_is_const_(CERIVE_P_cat(type, _cerive_const_probe), 0,)
+#define const_CERIVE_P_unconst
+#define CERIVE_P_strip_const(type) CERIVE_P_cat(type, _CERIVE_P_unconst)
+#define const_CERIVE_P_probe ~, 1,
+#define CERIVE_P_is_const(type) CERIVE_P_is_const_(CERIVE_P_cat(type, _CERIVE_P_probe), 0)
 #define CERIVE_P_is_const_(...) CERIVE_P_is_const__(__VA_ARGS__)
 #define CERIVE_P_is_const__(head, flag, ...) flag
-#define CERIVE_P_via_record(handler, type, name) \
-	CERIVE_P_via_record_(handler, CERIVE_P_strip_const(type), name)
+#define CERIVE_P_via_record(handler, type, name) CERIVE_P_via_record_( \
+	handler, \
+	CERIVE_P_strip_const(type), \
+	name \
+)
 #define CERIVE_P_via_record_(handler, base, name) handler(base, name)
 
 #define CERIVE_P_field_arity(...) CERIVE_P_field_arity_(__VA_ARGS__, 3, 2, 1, 0)
 #define CERIVE_P_field_arity_(a, b, c, n, ...) n
-#define CERIVE_P_field_kind(...) \
-	CERIVE_P_field_kind_n(CERIVE_P_field_arity(__VA_ARGS__), __VA_ARGS__)
+#define CERIVE_P_field_kind(...) CERIVE_P_field_kind_n( \
+	CERIVE_P_field_arity(__VA_ARGS__), \
+	__VA_ARGS__ \
+)
 #define CERIVE_P_field_kind_n(n, ...) CERIVE_P_field_kind_n_(n, __VA_ARGS__)
 #define CERIVE_P_field_kind_n_(n, ...) CERIVE_P_field_kind_##n(__VA_ARGS__)
 #define CERIVE_P_field_kind_3(star, type, name) pointer
@@ -78,7 +96,10 @@
 #define CERIVE_P_field_kind_c1 const_record
 #define CERIVE_P_field_kind_c0 record
 
-#define CERIVE_P_dispatch(prefix, ...) \
-	CERIVE_P_dispatch_(prefix, CERIVE_P_field_kind(__VA_ARGS__), __VA_ARGS__)
+#define CERIVE_P_dispatch(prefix, ...) CERIVE_P_dispatch_( \
+	prefix, \
+	CERIVE_P_field_kind(__VA_ARGS__), \
+	__VA_ARGS__ \
+)
 #define CERIVE_P_dispatch_(prefix, kind, ...) CERIVE_P_dispatch__(prefix, kind, __VA_ARGS__)
 #define CERIVE_P_dispatch__(prefix, kind, ...) prefix##_##kind(__VA_ARGS__)
