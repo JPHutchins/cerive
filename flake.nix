@@ -18,6 +18,7 @@
             pkgs.astyle # pretty-prints preprocessed macro expansions
             pkgs.uv # manages the `cstructs` python tooling (cmake/python/)
             pkgs.python314 # interpreter uv resolves against
+            pkgs.clang # scan-build for clang static analyzer
           ];
 
           # Make uv use the nix-provided interpreter instead of downloading one.

@@ -27,6 +27,11 @@ if(NOT PROJECT_IS_TOP_LEVEL)
 	return()
 endif()
 
+set(CERIVE_ANALYZE OFF CACHE BOOL "Enable GCC -fanalyzer static analysis")
+if(CERIVE_ANALYZE)
+	add_compile_options(-fanalyzer)
+endif()
+
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -101,3 +106,29 @@ add_custom_target(report
 	VERBATIM USES_TERMINAL)
 add_custom_target(evidence)
 add_dependencies(evidence report)
+
+# Clang static analyzer (scan-build). Uses a native clang build in a separate
+# directory — the ARM cross-compiler is GCC-only, so analysis runs on the host.
+# Requires: nix develop, `clang` and `scan-build` on PATH.
+find_program(SCAN_BUILD scan-build)
+if(SCAN_BUILD)
+	set(CLANG_ANALYZE_DIR ${CMAKE_BINARY_DIR}-clang-analyze)
+	add_custom_target(clang-analyze
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${CLANG_ANALYZE_DIR}
+		COMMAND ${CMAKE_COMMAND}
+			-DCMAKE_C_COMPILER=clang
+			-DCMAKE_C_STANDARD=23
+			-DCMAKE_C_STANDARD_REQUIRED=ON
+			-DCMAKE_C_FLAGS="-Wall -Wextra -Wdouble-promotion"
+			-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+			-B ${CLANG_ANALYZE_DIR}
+			-S ${CMAKE_SOURCE_DIR}
+		COMMAND ${SCAN_BUILD} --status-bugs
+			cmake --build ${CLANG_ANALYZE_DIR}
+		COMMENT "clang-analyze: scan-build on native clang build"
+		VERBATIM USES_TERMINAL)
+else()
+	add_custom_target(clang-analyze
+		COMMAND ${CMAKE_COMMAND} -E echo "scan-build not found (install clang)"
+		VERBATIM)
+endif()
