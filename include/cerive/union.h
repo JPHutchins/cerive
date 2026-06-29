@@ -109,9 +109,9 @@
  * A leading break terminates the prior arm. Omitting a variant is a compile error
  * (switch on the enum with no default -> -Wswitch under -Werror).
  *
- * WARNING: A bare `continue` inside a CASE body continues the macro's inner
- * `for` loop (which immediately exits), NOT any enclosing loop in the caller.
- * Use a flag variable or `goto` to continue an outer loop from within a CASE.
+ * Uses C23 `if (T x = e)` declarations instead of the for-loop trick, so
+ * `break` and `continue` inside a CASE body behave naturally — `break` exits
+ * the switch, `continue` continues the enclosing loop.
  *
  *   CERIVE_MATCH (shape) {
  *       CERIVE_CASE (Point, p) { use(p->x); }
@@ -119,32 +119,26 @@
  *   }
  */
 #define CERIVE_MATCH(instance) \
-	for (typeof(instance) *const cerive_matched = &(instance), *cerive_match_once = cerive_matched; \
-		 cerive_match_once; cerive_match_once = 0) \
+	if (typeof(instance) const * cerive_matched = &(instance)) \
 		switch (cerive_matched->tag)
 #define CERIVE_CASE(variant, bind) \
 	break; \
 	case variant##_tag: \
-		for (variant const * const bind = &cerive_matched->variant, *cerive_case_once = bind; \
-			 cerive_case_once; cerive_case_once = 0)
+		if (variant const * const bind = &cerive_matched->variant)
 
 /*
- * if-let: test a single variant and bind it in one construct. No switch, no
- * nested loops -- just a single for-loop trick for the scoped binding.
+ * if-let: test a single variant and bind it in one construct. Uses C23
+ * `if (T x = e)` with a ternary, so break/continue behave naturally.
  *
  *   CERIVE_IF_LET (shape, Point, p) {
  *       use(p->x);
  *   } else {
  *       // shape is not Point
  *   }
- *
- * WARNING: same `continue` caveat as CASE -- a bare `continue` inside the body
- * continues the macro's inner `for` loop (which exits), not any outer loop.
  */
 #define CERIVE_IF_LET(instance, variant, bind) \
-	if (CERIVE_IS(instance, variant)) \
-		for (variant const * const bind = &(instance).variant, *cerive_il_once = bind; \
-			 cerive_il_once; cerive_il_once = NULL)
+	if (variant const * const bind = \
+		CERIVE_IS(instance, variant) ? &(instance).variant : (variant const *) NULL)
 
 /* Short aliases (the one concession to brevity); #define CERIVE_NO_SHORT_NAMES to opt out. */
 #ifndef CERIVE_NO_SHORT_NAMES

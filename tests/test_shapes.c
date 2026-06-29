@@ -301,10 +301,14 @@ static int many_variant_union(void) {
 
 	MATCH (m0) {
 		CASE (Alpha, a) { CHECK(a->val == 10); }
-		CASE (Beta, b) { CHECK(!"should not reach"); }
-		CASE (Gamma, g) { CHECK(!"should not reach"); }
-		CASE (Delta, d) { CHECK(!"should not reach"); }
-		CASE (Epsilon, e) { CHECK(!"should not reach"); }
+		CASE (Beta, b) { (void) b;
+			CHECK(!"should not reach"); }
+		CASE (Gamma, g) { (void) g;
+			CHECK(!"should not reach"); }
+		CASE (Delta, d) { (void) d;
+			CHECK(!"should not reach"); }
+		CASE (Epsilon, e) { (void) e;
+			CHECK(!"should not reach"); }
 	}
 
 	return fails;
@@ -386,7 +390,7 @@ static int match_with_break(void) {
 		Shape_new(Point, .x = 5, .y = 6),
 	};
 
-	/* A break inside an inner for-loop inside a CASE body must only break the
+	/* A break inside an inner for-loop inside a CASE body breaks only the
 	 * inner loop, not the MATCH construct (whose for-loop trick wraps the
 	 * switch). */
 	int32_t got = -1;
@@ -399,10 +403,10 @@ static int match_with_break(void) {
 			}
 			got = p->x;
 		}
-		CASE (Line, l) {
+		CASE (Line, l) { (void) l;
 			got = -2;
 		}
-		CASE (Frame, f) {
+		CASE (Frame, f) { (void) f;
 			got = -3;
 		}
 	}
@@ -457,12 +461,39 @@ static int if_let(void) {
 
 	/* else branch taken when variant doesn't match. */
 	got = -1;
-	IF_LET (point, Frame, f) {
+	IF_LET (point, Frame, f) { (void) f;
 		got = 99;
 	} else {
 		got = 42;
 	}
 	CHECK(got == 42);
+
+	return fails;
+}
+
+static int match_with_continue(void) {
+	int fails = 0;
+
+	Shape const shapes[] = {
+		Shape_new(Point, .x = 1, .y = 2),
+		Shape_new(Point, .x = 3, .y = 4),
+		Shape_new(Point, .x = 5, .y = 6),
+	};
+	int32_t sum = 0;
+	for (size_t i = 0; i < 3; ++i) {
+		MATCH (shapes[i]) {
+			CASE (Point, p) {
+				sum += p->x;
+				continue;
+			}
+			CASE (Line, l) { (void) l;
+				sum = -99; }
+			CASE (Frame, f) { (void) f;
+				sum = -99; }
+		}
+		sum = -99;
+	}
+	CHECK(sum == 9);
 
 	return fails;
 }
@@ -489,6 +520,7 @@ int main(void) {
 		+ ord_short_circuit_3fields()
 		+ debug_exact_buffer()
 		+ match_with_break()
+		+ match_with_continue()
 		+ nested_union_variant()
 		+ if_let()
 #endif
