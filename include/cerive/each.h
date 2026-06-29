@@ -6,6 +6,10 @@
  * generator per listed token. Bounded count-and-unroll (up to 12), so no
  * FOR_EACH/EXPAND recursion is needed. CERIVE (prefix = CERIVE) and CERIVE_UNION
  * (prefix = CERIVE_UNION) both build on it.
+ *
+ * Passing 13+ traits triggers a compiler error (undefined CERIVE_P_over_13
+ * macro), not silent truncation. Zero traits silently produces nothing via
+ * __VA_OPT__ -- define at minimum Struct.
  */
 
 #define CERIVE_P_cat(a, b) CERIVE_P_cat_(a, b)

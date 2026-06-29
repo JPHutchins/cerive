@@ -26,6 +26,12 @@
  * inferred kind (scalar / record / const_record / pointer; see field.h). The
  * generated code is intended to be byte-identical to the equivalent hand-written
  * functions at every optimization level.
+ *
+ * All generated functions are static inline. At -O1+ the compiler inlines the
+ * trivial ones (Eq, Cmp, Hash, new, default) directly; the non-trivial Debug
+ * function is kept by --gc-sections only when referenced, and the linker folds
+ * identical copies via ICF. The evidence bench proves the resulting codegen is
+ * byte-identical to hand-written functions placed in a single translation unit.
  */
 
 #define CERIVE_VERSION_MAJOR 0
@@ -173,5 +179,9 @@
  * Combinator: CERIVE(T, traits...) fans out to CERIVE_<trait>(T) for each named
  * trait -- CERIVE(Point, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash).
  * Struct must lead (it defines the type the rest reference).
+ *
+ * Up to 12 traits are supported by the count-and-unroll fan-out in each.h.
+ * Constructor generates T_new() (not T_constructor) for conciseness at the
+ * call site.
  */
 #define CERIVE(T, ...) CERIVE_P_over(CERIVE, T, __VA_ARGS__)
