@@ -144,6 +144,19 @@
 #define CERIVE_P_debug_pointer(star, type, name) \
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), \
 		#name "=%p ", (void *) self->name);
+/*
+ * Define CERIVE_NO_DEBUG before including this header to omit all <T>_debug
+ * functions. On bare-metal targets this avoids linking snprintf from stdio.
+ */
+#ifdef CERIVE_NO_DEBUG
+#define CERIVE_Debug(T) \
+	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+		(void) self; \
+		(void) buf; \
+		(void) n; \
+		return 0; \
+	}
+#else
 /* Total debug output must fit in INT_MAX. */
 #define CERIVE_Debug(T) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
@@ -154,6 +167,7 @@
 		off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}"); \
 		return off; \
 	}
+#endif
 
 /*
  * Combinator: CERIVE(T, traits...) fans out to CERIVE_<trait>(T) for each named

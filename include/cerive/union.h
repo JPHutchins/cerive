@@ -52,6 +52,15 @@
 	} T;
 #define CERIVE_UNION(T, ...) CERIVE_P_union_def(T) CERIVE_P_over(CERIVE_UNION, T, __VA_ARGS__)
 
+#ifdef CERIVE_NO_DEBUG
+#define CERIVE_UNION_Debug(T) \
+	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+		(void) self; \
+		(void) buf; \
+		(void) n; \
+		return 0; \
+	}
+#else
 #define CERIVE_UNION_Debug(T) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		CERIVE_P_assert(self); \
@@ -60,6 +69,7 @@
 		} \
 		unreachable(); \
 	}
+#endif
 
 #define CERIVE_UNION_PartialEq(T) \
 	static inline bool T##_eq(T const * const a, T const * const b) { \
@@ -75,7 +85,12 @@
 	}
 
 /* construct: declare `#define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)`,
- * then `Shape_new(Point, .x = 1, .y = 2)` */
+ * then `Shape_new(Point, .x = 1, .y = 2)`
+ *
+ * The manual #define is REQUIRED because the C preprocessor cannot produce a
+ * #define directive from macro expansion (C23 6.10.3.4). There is no way for
+ * CERIVE_UNION itself to generate the T_new shorthand -- the two-line pattern
+ * above is the intended API. */
 #define CERIVE_UNION_NEW(T, variant, ...) \
 	(T){.tag = variant##_tag, .variant = {__VA_ARGS__}}
 
@@ -87,6 +102,10 @@
  * `variant const *`, scoped to the arm, so a wrong-field access will not compile.
  * A leading break terminates the prior arm. Omitting a variant is a compile error
  * (switch on the enum with no default -> -Wswitch under -Werror).
+ *
+ * WARNING: A bare `continue` inside a CASE body continues the macro's inner
+ * `for` loop (which immediately exits), NOT any enclosing loop in the caller.
+ * Use a flag variable or `goto` to continue an outer loop from within a CASE.
  *
  *   CERIVE_MATCH (shape) {
  *       CERIVE_CASE (Point, p) { use(p->x); }

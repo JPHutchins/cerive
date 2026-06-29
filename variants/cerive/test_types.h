@@ -75,6 +75,38 @@ CERIVE_UNION(Single, Debug, PartialEq)
 CERIVE(ShapeWrap, Struct, Debug, Constructor, Default, PartialEq)
 
 /*
+ * Inner -- a union with two simple variants, used as a variant of Outer.
+ */
+#define NodeA_FIELDS(X) \
+	X(int32_t, x) \
+	X(int32_t, y)
+CERIVE(NodeA, Struct, Debug, Constructor, Default, PartialEq)
+
+#define NodeB_FIELDS(X) \
+	X(int32_t, a) \
+	X(int32_t, b)
+CERIVE(NodeB, Struct, Debug, Constructor, Default, PartialEq)
+
+#define NodeC_FIELDS(X) X(int32_t, id)
+CERIVE(NodeC, Struct, Debug, Default, PartialEq)
+
+#define Inner_VARIANTS(X) \
+	X(NodeA) \
+	X(NodeB)
+CERIVE_UNION(Inner, Debug, PartialEq)
+#define Inner_new(...) CERIVE_UNION_NEW(Inner, __VA_ARGS__)
+
+/*
+ * Outer -- a union whose first variant (Inner) is itself a union, testing that
+ * Debug and Eq dispatch correctly through both levels.
+ */
+#define Outer_VARIANTS(X) \
+	X(Inner) \
+	X(NodeC)
+CERIVE_UNION(Outer, Debug, PartialEq)
+#define Outer_new(...) CERIVE_UNION_NEW(Outer, __VA_ARGS__)
+
+/*
  * Triple -- three int32_t fields for ord short-circuit testing.
  */
 #define Triple_FIELDS(X) \

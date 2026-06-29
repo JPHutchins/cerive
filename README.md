@@ -51,6 +51,14 @@ As a **Zephyr module**, point `west`/`ZEPHYR_EXTRA_MODULES` at this repo and set
 `CONFIG_CERIVE=y`; [zephyr/module.yml](zephyr/module.yml) adds the include path
 and the one runtime source. The rest of this README is the bench.
 
+## Requirements
+
+- **GCC 13+** or **Clang 16+** (C23: `typeof`, `__VA_OPT__`, enums with underlying
+  types, `__has_include`)
+- **CMake 3.25+**
+- For the bench: Nix with flakes enabled (pins `arm-none-eabi-gcc` 15.2, QEMU,
+  Ninja, astyle, uv + Python 3.14)
+
 ## Toolchain
 
 Everything is pinned by the flake; you need only Nix with flakes enabled.

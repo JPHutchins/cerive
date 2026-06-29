@@ -410,6 +410,30 @@ static int match_with_break(void) {
 
 	return fails;
 }
+static int nested_union_variant(void) {
+	int fails = 0;
+
+	Outer const o = Outer_new(Inner, .NodeA = {.x = 3, .y = 4});
+	CHECK(CERIVE_IS(o, Inner));
+	CHECK(o.Inner.NodeA.x == 3 && o.Inner.NodeA.y == 4);
+
+	CHECK(Outer_eq(&o, &Outer_new(Inner, .NodeA = {.x = 3, .y = 4})));
+	CHECK(!Outer_eq(&o, &Outer_new(Inner, .NodeA = {.x = 9, .y = 9})));
+	CHECK(!Outer_eq(&o, &Outer_new(NodeC, .id = 1)));
+
+	/* Construct with the non-union variant (NodeC, a plain struct). */
+	Outer const c = Outer_new(NodeC, .id = 5);
+	CHECK(CERIVE_IS(c, NodeC));
+	CHECK(c.NodeC.id == 5);
+
+	char buf[128];
+	Outer_debug(&o, buf, sizeof buf);
+	CHECK(strcmp(buf, "NodeA { x=3 y=4 }") == 0);
+	Outer_debug(&c, buf, sizeof buf);
+	CHECK(strcmp(buf, "NodeC { id=5 }") == 0);
+
+	return fails;
+}
 #endif /* CERIVE_HAS_EXTRA_TYPES */
 
 int main(void) {
@@ -433,6 +457,7 @@ int main(void) {
 		+ ord_short_circuit_3fields()
 		+ debug_exact_buffer()
 		+ match_with_break()
+		+ nested_union_variant()
 #endif
 		;
 
