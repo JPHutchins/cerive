@@ -25,11 +25,11 @@ _LOCAL = re.compile(r"\.L\w+")
 
 
 def split_functions(asm: str) -> dict[str, str]:
-    """Map each `%function` symbol to its raw body (between `name:` and `.size`).
+    r"""Map each `%function` symbol to its raw body (between `name:` and `.size`).
 
-    >>> split_functions("\\t.type f, %function\\nf:\\n\\tnop\\n\\t.size f, .-f\\n")["f"].strip()
+    >>> split_functions("\t.type f, %function\nf:\n\tnop\n\t.size f, .-f\n")["f"].strip()
     'nop'
-    >>> split_functions("\\t.thumb_func\\nf:\\n\\tnop\\n\\t.size f, .-f\\n")["f"].strip()
+    >>> split_functions("\t.thumb_func\nf:\n\tnop\n\t.size f, .-f\n")["f"].strip()
     'nop'
     """
     funcs: dict[str, str] = {}
@@ -59,11 +59,11 @@ def split_functions(asm: str) -> dict[str, str]:
 
 
 def canonical(body: str) -> str:
-    """Drop noise (comments, CFI/debug/section directives), neutralize helper
+    r"""Drop noise (comments, CFI/debug/section directives), neutralize helper
     symbol names and renumber local labels -- leaving comparable instructions.
 
-    >>> canonical("\\tbl\\tcerive_buf_remaining\\t@ x\\n.L7:\\n\\tbx\\tlr")
-    'bl\\tH_rem\\n.L0:\\nbx\\tlr'
+    >>> canonical("\tbl\tcerive_buf_remaining\t@ x\n.L7:\n\tbx\tlr")
+    'bl\tH_rem\n.L0:\nbx\tlr'
     """
     kept: list[str] = []
     for raw in body.splitlines():
@@ -76,12 +76,14 @@ def canonical(body: str) -> str:
 
 
 def instr_count(canon: str) -> int:
-    """Count instruction lines (excluding labels and data directives).
+    r"""Count instruction lines (excluding labels and data directives).
 
-    >>> instr_count("mov\\tr0, r1\\n.L0:\\nbx\\tlr")
+    >>> instr_count("mov\tr0, r1\n.L0:\nbx\tlr")
     2
     """
-    return sum(1 for ln in canon.splitlines() if ln and not ln.endswith(":") and not ln.startswith("."))
+    return sum(
+        1 for ln in canon.splitlines() if ln and not ln.endswith(":") and not ln.startswith(".")
+    )
 
 
 def diff_lines(a: str, b: str, a_label: str, b_label: str) -> str:
@@ -89,7 +91,9 @@ def diff_lines(a: str, b: str, a_label: str, b_label: str) -> str:
     if a == b:
         return ""
     return "\n".join(
-        difflib.unified_diff(a.splitlines(), b.splitlines(), fromfile=a_label, tofile=b_label, lineterm="")
+        difflib.unified_diff(
+            a.splitlines(), b.splitlines(), fromfile=a_label, tofile=b_label, lineterm=""
+        )
     )
 
 
@@ -97,9 +101,9 @@ _SYM = re.compile(r"^[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+\w\s+(\w+)\s*$")
 
 
 def parse_syms(nm_output: str) -> dict[str, int]:
-    """Parse `nm --print-size` lines into {symbol: byte size}.
+    r"""Parse `nm --print-size` lines into {symbol: byte size}.
 
-    >>> parse_syms("00000000 00000018 T study_eq\\n0000abcd t local_no_size")
+    >>> parse_syms("00000000 00000018 T study_eq\n0000abcd t local_no_size")
     {'study_eq': 24}
     """
     out: dict[str, int] = {}

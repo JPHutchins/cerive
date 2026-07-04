@@ -8,4 +8,7 @@ __pycache__/
 *.pyc
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .venv/
+.claude/settings.local.json
+camas-ideas.md

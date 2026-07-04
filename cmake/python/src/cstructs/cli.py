@@ -66,7 +66,7 @@ def report(matrix_dir: Path, variants: Tokens, cpus: Tokens, opts: Tokens) -> No
 @app.command
 def capture(out: Path, *command: str) -> int:
     """Run COMMAND, writing its stdout to --out (replaces shell redirects)."""
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, check=False)
     sys.stderr.write(result.stderr)
     if result.returncode != 0:
         print(f"error: command failed with exit code {result.returncode}", file=sys.stderr)

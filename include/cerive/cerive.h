@@ -39,9 +39,9 @@
 #define CERIVE_VERSION_PATCH 0
 
 #ifdef CERIVE_NO_ASSERT
-#define CERIVE_P_assert(ptr) ((void) 0)
+#	define CERIVE_P_assert(ptr) ((void) 0)
 #else
-#define CERIVE_P_assert(ptr) \
+#	define CERIVE_P_assert(ptr) \
 	do { \
 		_Pragma("GCC diagnostic push") \
 		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
@@ -161,7 +161,7 @@
  * functions. On bare-metal targets this avoids linking snprintf from stdio.
  */
 #ifdef CERIVE_NO_DEBUG
-#define CERIVE_Debug(T) \
+#	define CERIVE_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		(void) self; \
@@ -171,7 +171,7 @@
 	}
 #else
 /* Total debug output must fit in INT_MAX. */
-#define CERIVE_Debug(T) \
+#	define CERIVE_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		CERIVE_P_assert(self); \
