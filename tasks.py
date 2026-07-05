@@ -66,11 +66,11 @@ cfg_arm = Task("cmake --preset arm")
 build = Task("cmake --build build")
 ctest = Task("ctest --preset arm")
 build_evidence = Task("cmake --build --preset evidence")
-# clang static analyzer. Deliberately NOT in `gate`/`all`: clang 21 rejects the C23
-# declaration-as-condition `if (T x = expr)` that MATCH/CASE/IF_LET use (HEAD 8aca771) — an
-# extension gcc-arm accepts and clang does not — so this target cannot pass with the current
-# toolchain. Runnable via `camas clang_analyze`; fold it back into `c`/`evidence` once the
-# macros compile under clang (or a clang-compatible spelling replaces the if-decl).
+# clang static analyzer. Deliberately NOT in `gate`/`all`: the opt-in <cerive/match.h>
+# (MATCH/CASE/if LET) uses N3356 "if declarations" — a C2Y feature (WG14 N3356), not C23 —
+# that gcc-arm 15 accepts and clang 21 does not, so analyzing the match tests halts. The rest
+# of cerive is portable C23. Runnable via `camas clang_analyze`; fold back into `c`/`evidence`
+# once clang implements N3356 (or the match tests are guarded out under clang).
 clang_analyze = Task("cmake --build build --target clang-analyze", when=c_build_touched)
 
 # --- C static analysis (GCC -fanalyzer, separate build dir `build-analyze`) ---

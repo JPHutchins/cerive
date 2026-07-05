@@ -54,7 +54,9 @@ and the one runtime source. The rest of this README is the bench.
 ## Requirements
 
 - **GCC 13+** or **Clang 16+** (C23: `typeof`, `__VA_OPT__`, enums with underlying
-  types, `__has_include`)
+  types, `__has_include`). The core is portable C23; the opt-in
+  [include/cerive/match.h](include/cerive/match.h) pattern matching additionally needs
+  **GCC 15+** (or `-std=c2y`) for N3356 "if declarations", which Clang 21 lacks.
 - **CMake 3.25+**
 - For the bench: Nix with flakes enabled (pins `arm-none-eabi-gcc` 15.2, QEMU,
   Ninja, astyle, uv + Python 3.14)
@@ -208,16 +210,22 @@ with a `_tag`-suffixed discriminant pasted by the macros (so you always pass the
 bare token):
 
 ```c
+#include <cerive/match.h>   /* opt-in; NOT pulled in by <cerive/cerive.h> */
+
 Shape s = Shape_new(Point, .x = 1, .y = 2);     /* construct */
 if (CERIVE_IS(s, Point)) { /* ... */ }           /* predicate  */
 MATCH (s) {                                      /* type-safe match (CERIVE_MATCH) */
     CASE (Point, p) { use(p->x); }   /* p is `Point const *`, bound from s */
     CASE (Frame, f) { use(f->id); }  /* wrong-field access won't compile */
 }
+if LET (s, Point, p) { use(p->x); } else { /* s is not a Point */ }
 ```
 
-`MATCH`/`CASE` are short aliases for `CERIVE_MATCH`/`CERIVE_CASE` (suppress with
-`-DCERIVE_NO_SHORT_NAMES`).
+`MATCH`/`CASE`/`LET` are short aliases for `CERIVE_MATCH`/`CERIVE_CASE`/`CERIVE_LET`
+(suppress with `-DCERIVE_NO_SHORT_NAMES`). Pattern matching lives in the opt-in
+[include/cerive/match.h](include/cerive/match.h) and uses N3356 "if declarations" — a
+**C2Y** feature (WG14 N3356), *not* C23 — so it needs **GCC 15+** (or `-std=c2y`); Clang 21
+does not implement it yet. The rest of cerive is portable C23 and never requires this header.
 
 ## Layout
 
@@ -228,7 +236,8 @@ include/cerive/           the library macros (#include <cerive/cerive.h>):
   each.h                    CERIVE_P_over: generic comma-list fan-out
   ord.h hash.h new.h        cerive_ordering, FNV-1a, CERIVE_NEW compound-literal
   buf.h                     Debug offset-cursor prototypes
-  union.h                   tagged-union helpers (CERIVE_UNION, NEW/IS, MATCH/CASE)
+  union.h                   tagged-union helpers (CERIVE_UNION, NEW/IS)
+  match.h                   opt-in MATCH/CASE + if-let (C2Y N3356; GCC 15+ / -std=c2y)
 src/cerive.c              the shared runtime helpers (cerive_buf_*, cerive_hash_*)
 CMakeLists.txt            cerive::cerive STATIC lib; Zephyr branch; the bench
 zephyr/module.yml Kconfig Zephyr module (CONFIG_CERIVE adds includes + the runtime)

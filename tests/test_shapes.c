@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "shapes.h"
+
+#include <cerive/match.h>
 #if __has_include("test_types.h")
 #	include "test_types.h"
 #	define CERIVE_HAS_EXTRA_TYPES 1
@@ -390,9 +392,8 @@ static int match_with_break(void) {
 		Shape_new(Point, .x = 5, .y = 6),
 	};
 
-	/* A break inside an inner for-loop inside a CASE body breaks only the
-	 * inner loop, not the MATCH construct (whose for-loop trick wraps the
-	 * switch). */
+	/* A break inside an inner for-loop inside a CASE body breaks only that
+	 * inner loop, not the enclosing switch that MATCH opens. */
 	int32_t got = -1;
 	MATCH(shapes[0]) {
 		CASE(Point, p) {
@@ -445,14 +446,14 @@ static int if_let(void) {
 	Shape const frame = Shape_new(Frame, .edge = Line_default(), .id = 3);
 	int32_t got = -1;
 
-	IF_LET(point, Point, p) {
+	if LET(point, Point, p) {
 		got = p->x;
 	} else {
 		got = -2;
 	}
 	CHECK(got == 7);
 
-	IF_LET(frame, Frame, f) {
+	if LET(frame, Frame, f) {
 		got = f->id;
 	} else {
 		got = -2;
@@ -461,7 +462,7 @@ static int if_let(void) {
 
 	/* else branch taken when variant doesn't match. */
 	got = -1;
-	IF_LET(point, Frame, f) { (void) f;
+	if LET(point, Frame, f) { (void) f;
 		got = 99;
 	} else {
 		got = 42;
