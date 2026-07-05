@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx 'camas[mcp]==0.1.21' mcp fix"
+            "command": "uvx 'camas[mcp]==0.1.22' mcp fix"
           }
         ]
       }

@@ -4,7 +4,7 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "camas[mcp]==0.1.21",
+        "camas[mcp]==0.1.22",
         "mcp"
       ]
     }

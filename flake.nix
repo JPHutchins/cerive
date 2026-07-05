@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     # Task runner + MCP server: tasks.py is the SSOT for validation (devs, CI, agents).
-    camas.url = "github:JPHutchins/camas/0.1.21";
+    camas.url = "github:JPHutchins/camas/0.1.22";
 
     # Zero-config C formatter (Rust, no flake of its own) for the agent autofix node.
     jphfmt = {

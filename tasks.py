@@ -1,19 +1,17 @@
 """camas task definitions — the single source of truth for cerive validation.
 
-Devs (`camas`), CI (`camas check`), and agents (the MCP gate + the PostToolBatch autofix)
-all run the same leaves composed here; nothing duplicates the pipeline. Each module-level
-binding's variable name is its task name (`camas <name>`); `Parallel` is independent
-read-only work (wall-clock max), `Sequential` is real ordering (a build dir mutated in
-steps, or a step that consumes a prior's output).
+Devs (`camas`), CI (`camas`), and agents (the MCP gate + the PostToolBatch autofix) all run
+the same leaves composed here; nothing duplicates the pipeline. Each module-level binding's
+variable name is its task name (`camas <name>`); `Parallel` is independent read-only work
+(wall-clock max), `Sequential` is real ordering (a build dir mutated in steps).
 
-- C correctness on ARM under QEMU (configure, build, ctest) plus clang `--analyze` and a
-  separate GCC `-fanalyzer` build;
-- the `cstructs` Python tooling — ruff (strict), mypy, pyright, pytest — and jphfmt over the
-  C sources;
-- `nix flake check` and the evidence matrix, heavy enough to sit in the full run only.
+Scoping keeps the agent's per-edit gate cheap: `{paths}` leaves (ruff, jphfmt) narrow to the
+changed files and prune when none match; whole-project leaves that can't take `{paths}`
+(cmake, nix) carry a `when=` run-if-changed predicate instead. A full run (`camas`, CI) never
+consults `when` — everything runs.
 
-`gate` is the fast per-edit loop the agent drives; `all` is the comprehensive run for devs
-and CI. `fix` is the mutating autofix node the PostToolBatch hook applies to changed files.
+`gate` is the fast per-edit loop the agent drives; `all` is the comprehensive run for devs and
+CI. `fix` is the mutating autofix node the PostToolBatch hook applies to changed files.
 """
 
 from pathlib import Path
@@ -42,13 +40,23 @@ def py_sources(changed: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(p for p in changed if p.endswith(".py") and p.startswith("cmake/python/"))
 
 
+def c_build_touched(changed: tuple[str, ...]) -> bool:
+    """`when=` for the cmake lanes: a C source, the cmake wiring, or the toolchain changed."""
+    return any(
+        p.startswith(tuple(f"{d}/" for d in C_TREE))
+        or p.endswith(".cmake")
+        or p in ("CMakeLists.txt", "CMakePresets.json", "flake.nix", "flake.lock")
+        for p in changed
+    )
+
+
 # --- Python tooling (cstructs, cmake/python/) ---
 ruff = Task("uv run ruff check {paths}", cwd=PY, paths=py_sources)
 ruff_format = Task("uv run ruff format --check {paths}", cwd=PY, paths=py_sources)
 mypy = Task("uv run mypy", cwd=PY)
 pyright = Task("uv run pyright", cwd=PY)
 pytest = Task("uv run pytest", cwd=PY)
-python = Parallel(ruff, ruff_format, mypy, pyright, pytest)
+python = Parallel(ruff, ruff_format, mypy, pyright, pytest, when="cmake/python")
 
 # --- C formatting (jphfmt) ---
 cfmt = Task("jphfmt --check {paths}", paths=c_sources)
@@ -63,21 +71,19 @@ build_evidence = Task("cmake --build --preset evidence")
 # extension gcc-arm accepts and clang does not — so this target cannot pass with the current
 # toolchain. Runnable via `camas clang_analyze`; fold it back into `c`/`evidence` once the
 # macros compile under clang (or a clang-compatible spelling replaces the if-decl).
-clang_analyze = Task("cmake --build build --target clang-analyze")
+clang_analyze = Task("cmake --build build --target clang-analyze", when=c_build_touched)
 
 # --- C static analysis (GCC -fanalyzer, separate build dir `build-analyze`) ---
 cfg_analyze = Task("cmake --preset analyze")
 build_analyze = Task("cmake --build --preset analyze")
-analyze = Sequential(cfg_analyze, build_analyze)
+analyze = Sequential(cfg_analyze, build_analyze, when=c_build_touched)
 
 # --- C lanes (share the `build` dir, so each is a single ordered chain, never parallel) ---
-c = Sequential(cfg_arm, build, ctest)
-evidence = Sequential(cfg_arm, build, ctest, build_evidence)
+c = Sequential(cfg_arm, build, ctest, when=c_build_touched)
+evidence = Sequential(cfg_arm, build, ctest, build_evidence, when=c_build_touched)
 
 # --- Nix ---
-# current system only: --all-systems would evaluate the ARM toolchain (gcc-arm-embedded, qemu)
-# for platforms where it is unsupported and fail. CI runs this per-runner-OS instead.
-nix = Task("nix flake check --print-build-logs")
+nix = Task("nix flake check --print-build-logs", when=("flake.nix", "flake.lock"))
 
 # --- Gates (composed from the leaves above; no duplicated pipeline) ---
 gate = Parallel(python, cfmt, c, analyze)
