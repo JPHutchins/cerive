@@ -1,23 +1,28 @@
 """Render a glanceable codegen comparison: equivalence grid + true asm diffs."""
 
 import re
-from typing import Mapping, NamedTuple, Sequence
+from typing import TYPE_CHECKING, NamedTuple
 
 from cstructs.asm import diff_lines, instr_count
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 Key = tuple[str, str, str, str]  # impl, cpu, opt, function
 
 
 class SizeInfo(NamedTuple):
+    """Berkeley `size` segment byte counts for one translation unit."""
+
     text: int
     data: int
     bss: int
 
 
 def parse_size(output: str) -> SizeInfo | None:
-    """Parse the data row of `size` (Berkeley). First three ints are text/data/bss.
+    r"""Parse the data row of `size` (Berkeley). First three ints are text/data/bss.
 
-    >>> parse_size("  text  data  bss\\n  88  0  4  92  5c  x.o")
+    >>> parse_size("  text  data  bss\n  88  0  4  92  5c  x.o")
     SizeInfo(text=88, data=0, bss=4)
     >>> parse_size("nonsense") is None
     True
@@ -42,7 +47,8 @@ def render_report(
 ) -> str:
     """Build report.md. `canon`/`sizes` are keyed (impl, cpu, opt, fn); `totals`
     is whole-TU text bytes keyed (impl, cpu, opt). handwritten is the baseline;
-    the remaining variants are the candidate strategies compared against it."""
+    the remaining variants are the candidate strategies compared against it.
+    """
     baseline = "handwritten" if "handwritten" in variants else (variants[-1] if variants else "")
     candidates = [v for v in variants if v != baseline]
     fns = sorted(
@@ -56,9 +62,18 @@ def render_report(
     body: list[str] = []
 
     for cpu in cpus:
-        body += [f"## {cpu}", "", "`text` bytes, whole TU:", "", "| impl | " + " | ".join(opts) + " |", "|---|" + "---|" * len(opts)]
+        body += [
+            f"## {cpu}",
+            "",
+            "`text` bytes, whole TU:",
+            "",
+            "| impl | " + " | ".join(opts) + " |",
+            "|---|" + "---|" * len(opts),
+        ]
         for v in variants:
-            body.append(f"| {v} | " + " | ".join(str(totals.get((v, cpu, o), "-")) for o in opts) + " |")
+            body.append(
+                f"| {v} | " + " | ".join(str(totals.get((v, cpu, o), "-")) for o in opts) + " |"
+            )
         body += [
             "",
             f"per function: `=` identical asm across impls · `+N` Δbytes vs {baseline} · `⚠` candidates disagree",
@@ -92,11 +107,14 @@ def render_report(
                     base_mismatches.append(f"{fn}@{opt}")
                 baseline_got = got.get(baseline)
                 if baseline_got is not None and any(
-                    got[v] is not None and got[v] != baseline_got
-                    for v in cand_here
+                    got[v] is not None and got[v] != baseline_got for v in cand_here
                 ):
                     base_mismatches.append(f"{fn}@{opt}")
-                x, y = (cand_here[0], cand_here[1]) if strat_diff and len(cand_here) >= 2 else (candidates[0], baseline)
+                x, y = (
+                    (cand_here[0], cand_here[1])
+                    if strat_diff and len(cand_here) >= 2
+                    else (candidates[0], baseline)
+                )
                 cx, cy = canon.get((x, cpu, opt, fn)), canon.get((y, cpu, opt, fn))
                 if cx is not None and cy is not None:
                     d = diff_lines(cx, cy, x, y)
@@ -114,14 +132,22 @@ def render_report(
     if len(candidates) >= 2:  # only meaningful with rival strategies to agree/disagree
         head += [
             f"**{cand_label}:** "
-            + ("✅ identical everywhere" if not strat_breaks else "❌ differ at " + ", ".join(dict.fromkeys(strat_breaks))),
+            + (
+                "✅ identical everywhere"
+                if not strat_breaks
+                else "❌ differ at " + ", ".join(dict.fromkeys(strat_breaks))
+            ),
             "",
         ]
     head += [
         f"**{cand_label} ≡ {baseline}:** "
-        + ("✅ identical everywhere" if not base_mismatches else "⚠️ differ at " + ", ".join(dict.fromkeys(base_mismatches))),
+        + (
+            "✅ identical everywhere"
+            if not base_mismatches
+            else "⚠️ differ at " + ", ".join(dict.fromkeys(base_mismatches))
+        ),
         "",
     ]
     if diffs:
-        body += ["## diffs", ""] + diffs
+        body += ["## diffs", "", *diffs]
     return "\n".join(head + body)

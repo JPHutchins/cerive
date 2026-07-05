@@ -8,10 +8,10 @@
 #include "new.h"
 
 #ifndef CERIVE_P_assert
-#ifdef CERIVE_NO_ASSERT
-#define CERIVE_P_assert(ptr) ((void) 0)
-#else
-#define CERIVE_P_assert(ptr) \
+#	ifdef CERIVE_NO_ASSERT
+#		define CERIVE_P_assert(ptr) ((void) 0)
+#	else
+#		define CERIVE_P_assert(ptr) \
 	do { \
 		_Pragma("GCC diagnostic push") \
 		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
@@ -20,7 +20,7 @@
 		} \
 		_Pragma("GCC diagnostic pop") \
 	} while (0)
-#endif
+#	endif
 #endif
 
 /*
@@ -56,7 +56,7 @@
 #define CERIVE_UNION(T, ...) CERIVE_P_union_def(T) CERIVE_P_over(CERIVE_UNION, T, __VA_ARGS__)
 
 #ifdef CERIVE_NO_DEBUG
-#define CERIVE_UNION_Debug(T) \
+#	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		(void) self; \
@@ -65,7 +65,7 @@
 		return 0; \
 	}
 #else
-#define CERIVE_UNION_Debug(T) \
+#	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
 		CERIVE_P_assert(self); \
@@ -142,7 +142,7 @@
 
 /* Short aliases (the one concession to brevity); #define CERIVE_NO_SHORT_NAMES to opt out. */
 #ifndef CERIVE_NO_SHORT_NAMES
-	#define MATCH CERIVE_MATCH
-	#define CASE CERIVE_CASE
-	#define IF_LET CERIVE_IF_LET
+#	define MATCH CERIVE_MATCH
+#	define CASE CERIVE_CASE
+#	define IF_LET CERIVE_IF_LET
 #endif

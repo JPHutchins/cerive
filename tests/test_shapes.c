@@ -4,8 +4,8 @@
 
 #include "shapes.h"
 #if __has_include("test_types.h")
-#include "test_types.h"
-#define CERIVE_HAS_EXTRA_TYPES 1
+#	include "test_types.h"
+#	define CERIVE_HAS_EXTRA_TYPES 1
 #endif
 
 #define CHECK(cond) \
@@ -239,10 +239,10 @@ static int union_match(void) {
 
 	for (size_t i = 0; i < sizeof shapes / sizeof shapes[0]; ++i) {
 		int32_t got = -1;
-		MATCH (shapes[i]) {
-			CASE (Point, p) { got = p->x; }
-			CASE (Line, l) { got = l->a.x; }
-			CASE (Frame, f) { got = f->id; }
+		MATCH(shapes[i]) {
+			CASE(Point, p) { got = p->x; }
+			CASE(Line, l) { got = l->a.x; }
+			CASE(Frame, f) { got = f->id; }
 		}
 		CHECK(got == want[i]);
 	}
@@ -299,15 +299,15 @@ static int many_variant_union(void) {
 	CHECK(!Many_eq(&m0, &Many_new(Alpha, .val = 99)));
 	CHECK(!Many_eq(&m0, &m1));
 
-	MATCH (m0) {
-		CASE (Alpha, a) { CHECK(a->val == 10); }
-		CASE (Beta, b) { (void) b;
+	MATCH(m0) {
+		CASE(Alpha, a) { CHECK(a->val == 10); }
+		CASE(Beta, b) { (void) b;
 			CHECK(!"should not reach"); }
-		CASE (Gamma, g) { (void) g;
+		CASE(Gamma, g) { (void) g;
 			CHECK(!"should not reach"); }
-		CASE (Delta, d) { (void) d;
+		CASE(Delta, d) { (void) d;
 			CHECK(!"should not reach"); }
-		CASE (Epsilon, e) { (void) e;
+		CASE(Epsilon, e) { (void) e;
 			CHECK(!"should not reach"); }
 	}
 
@@ -394,8 +394,8 @@ static int match_with_break(void) {
 	 * inner loop, not the MATCH construct (whose for-loop trick wraps the
 	 * switch). */
 	int32_t got = -1;
-	MATCH (shapes[0]) {
-		CASE (Point, p) {
+	MATCH(shapes[0]) {
+		CASE(Point, p) {
 			for (int j = 0; j < 10; ++j) {
 				if (j >= 1) {
 					break;
@@ -403,10 +403,10 @@ static int match_with_break(void) {
 			}
 			got = p->x;
 		}
-		CASE (Line, l) { (void) l;
+		CASE(Line, l) { (void) l;
 			got = -2;
 		}
-		CASE (Frame, f) { (void) f;
+		CASE(Frame, f) { (void) f;
 			got = -3;
 		}
 	}
@@ -445,14 +445,14 @@ static int if_let(void) {
 	Shape const frame = Shape_new(Frame, .edge = Line_default(), .id = 3);
 	int32_t got = -1;
 
-	IF_LET (point, Point, p) {
+	IF_LET(point, Point, p) {
 		got = p->x;
 	} else {
 		got = -2;
 	}
 	CHECK(got == 7);
 
-	IF_LET (frame, Frame, f) {
+	IF_LET(frame, Frame, f) {
 		got = f->id;
 	} else {
 		got = -2;
@@ -461,7 +461,7 @@ static int if_let(void) {
 
 	/* else branch taken when variant doesn't match. */
 	got = -1;
-	IF_LET (point, Frame, f) { (void) f;
+	IF_LET(point, Frame, f) { (void) f;
 		got = 99;
 	} else {
 		got = 42;
@@ -481,14 +481,14 @@ static int match_with_continue(void) {
 	};
 	int32_t sum = 0;
 	for (size_t i = 0; i < 3; ++i) {
-		MATCH (shapes[i]) {
-			CASE (Point, p) {
+		MATCH(shapes[i]) {
+			CASE(Point, p) {
 				sum += p->x;
 				continue;
 			}
-			CASE (Line, l) { (void) l;
+			CASE(Line, l) { (void) l;
 				sum = -99; }
-			CASE (Frame, f) { (void) f;
+			CASE(Frame, f) { (void) f;
 				sum = -99; }
 		}
 		sum = -99;

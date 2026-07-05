@@ -1,6 +1,58 @@
 {
   "nodes": {
+    "camas": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1783220993,
+        "narHash": "sha256-ylOc0atW3DbwseXLi/spHv0iwVWkNQ1ZeFQpADpFf0o=",
+        "owner": "JPHutchins",
+        "repo": "camas",
+        "rev": "12178886dddb4f59e522a184dcfda3a10c31c6fc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JPHutchins",
+        "ref": "0.1.22",
+        "repo": "camas",
+        "type": "github"
+      }
+    },
+    "jphfmt": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783200321,
+        "narHash": "sha256-Hn8y1ODlUPEBbTVj4b6+cHtocioBkHV5KeBFLHrwOF8=",
+        "owner": "JPHutchins",
+        "repo": "jphfmt",
+        "rev": "30495fd70d2748d189f6e5fd959de1a2a0d51d8e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JPHutchins",
+        "ref": "v0.1.3",
+        "repo": "jphfmt",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
+      "locked": {
+        "lastModified": 1778443072,
+        "narHash": "sha256-zi7/fsqM/kFdNuED//4WOCUtezGtKKqRNORjMvfwjnA=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "da5ad661ba4e5ef59ba743f0d112cbc30e474f32",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
       "locked": {
         "lastModified": 1782175435,
         "narHash": "sha256-EMzXKmnOtBQ2MnvpiNOm7E+kOMvdPrIKaeg52Tip2Uk=",
@@ -18,7 +70,9 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "camas": "camas",
+        "jphfmt": "jphfmt",
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },

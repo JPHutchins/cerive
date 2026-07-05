@@ -10,13 +10,13 @@ def _is_system(path: str, flags: str) -> bool:
 
 
 def strip_system_headers(preprocessed: str) -> str:
-    """Keep only lines whose enclosing `# line "file"` marker is project code.
+    r"""Keep only lines whose enclosing `# line "file"` marker is project code.
 
     System headers carry the `3` flag and built-ins start with `<`, so only
     code pulled in via `-I` (the derive expansion) survives.
 
-    >>> strip_system_headers('# 1 "a.c"\\nkeep me\\n# 1 "h.h" 3 4\\ndrop me\\n')
-    'keep me\\n'
+    >>> strip_system_headers('# 1 "a.c"\nkeep me\n# 1 "h.h" 3 4\ndrop me\n')
+    'keep me\n'
     """
     kept: list[str] = []
     keep = False
@@ -30,10 +30,10 @@ def strip_system_headers(preprocessed: str) -> str:
 
 
 def _tidy(text: str) -> str:
-    """Drop leading/trailing blank lines and collapse interior blank runs.
+    r"""Drop leading/trailing blank lines and collapse interior blank runs.
 
-    >>> _tidy('\\n\\n\\na\\n\\n\\n\\nb')
-    'a\\n\\nb\\n'
+    >>> _tidy("\n\n\na\n\n\n\nb")
+    'a\n\nb\n'
     """
     body = re.sub(r"\n{3,}", "\n\n", text.strip("\n"))
     return body + "\n" if body else ""

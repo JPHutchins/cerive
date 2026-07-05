@@ -10,7 +10,7 @@ enum {
 static long semihost(long const op, void * const arg) {
 	register long r0 __asm__("r0") = op;
 	register void * r1 __asm__("r1") = arg;
-	__asm__ volatile("bkpt 0xAB" : "+r"(r0) : "r"(r1) : "memory");
+	__asm__ volatile ("bkpt 0xAB" : "+r"(r0) : "r"(r1) : "memory");
 	return r0;
 }
 

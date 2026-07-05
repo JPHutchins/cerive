@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx 'camas[mcp]==0.1.22' mcp fix"
+          }
+        ]
+      }
+    ]
+  }
+}
