@@ -22,7 +22,7 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       (github.event.workflow_run.conclusion == 'success' ||
        github.event.workflow_run.conclusion == 'failure')
-    uses: JPHutchins/code-review/.github/workflows/review-reusable.yaml@v0.1.0-alpha.22
+    uses: JPHutchins/code-review/.github/workflows/review-reusable.yaml@v0.1.0-alpha.23
     with:
       head_sha:      ${{ github.event.workflow_run.head_sha }}
       head_branch:   ${{ github.event.workflow_run.head_branch }}
@@ -31,6 +31,8 @@ jobs:
       conclusion:    ${{ github.event.workflow_run.conclusion }}
       trigger_event: ${{ github.event.workflow_run.event }}
       api_base_url:  ${{ vars.API_BASE_URL }}
-      # STATIC review (canonical walls 24m/27m·6m/7m are the reusable workflow's defaults).
+      model_full:    deepseek-v4-pro
+      model_mechanic: deepseek-v4-flash
+      # STATIC review (time limits + grace periods are the reusable workflow's defaults: 24m + 12m · 6m + 3m).
     secrets:
       MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
