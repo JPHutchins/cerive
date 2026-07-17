@@ -40,7 +40,7 @@ analyze = Sequential(cfg_analyze, build_analyze, when=c_build_touched)
 c = Sequential(cfg_arm, build, ctest, when=c_build_touched)
 evidence = Sequential(cfg_arm, build, ctest, build_evidence, when=c_build_touched)
 nix = Task("nix flake check --print-build-logs", when=("flake.nix", "flake.lock"))
-check = Parallel(cfmt, evidence, c, analyze)
+check = Parallel(cfmt, evidence, analyze)
 fix = Task("jphfmt -i {paths}", paths=c_sources, mutates=True)
 default = Sequential(fix, check)
 
