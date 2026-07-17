@@ -7,5 +7,9 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/cmake/python/.venv/bin/python",
   "files.associations": {
     "*.ld": "ld"
+  },
+  "[c]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "JPH.jphfmt"
   }
 }
