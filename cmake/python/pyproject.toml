@@ -14,7 +14,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["mypy>=1.13", "pyright>=1.1.408", "pytest>=8", "ruff>=0.12"]
+dev = [
+"mypy>=1.13",
+"pyright>=1.1.408",
+"pytest>=8",
+"ruff>=0.12",
+"camas==0.1.25",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cstructs"]
@@ -111,8 +117,13 @@ allowed-confusables = ["·", "Δ", "—", "≠", "≡", "⚠", "✅", "❌", "×
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D", "INP001"]           # tests document themselves by name; not an installed package
-"src/cstructs/cli.py" = ["TC003"]      # cyclopts resolves command annotations at runtime (get_type_hints)
+"tests/**" = [
+"D",
+"INP001",
+] # tests document themselves by name; not an installed package
+"src/cstructs/cli.py" = [
+"TC003",
+] # cyclopts resolves command annotations at runtime (get_type_hints)
 
 [tool.ruff.format]
 docstring-code-format = true

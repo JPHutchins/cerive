@@ -56,6 +56,20 @@ wheels = [
 ]
 
 [[package]]
+name = "camas"
+version = "0.1.25"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/0c/eac7c48f800852bac7348e3db8b49405ed37f995dc703cd7a93e63c4a390/camas-0.1.25.tar.gz", hash = "sha256:19806df35e11777e4626ac0428325b0fbdf83ae12fa60ffc08b671eb476105cf", size = 169389, upload-time = "2026-07-16T02:01:51.371Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/a8/3499d1e051a54c9c86bced74b58c3bab04db39f7beb63ea06b73a2b5fba7/camas-0.1.25-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:e27dd9505f8198365d5c60f269ca2640c563577fda71e31aa673e6768ceca20b", size = 705277, upload-time = "2026-07-16T02:01:42.814Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/4c/4fa387139419d75a8cd9e3fb016b9271d9d9c6affa870b351ba82430d06a/camas-0.1.25-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b24b2fa956ca1742ca2133e0268ded06ac01df0cdafc1bf0808afe2d80b1dcdb", size = 1014688, upload-time = "2026-07-16T02:01:44.158Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/80/23e0d178cd237d7d6ab93f920c29178cd3386c533b27824986b07a0d11a7/camas-0.1.25-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ec58c6a1229887a0a90ae9403a3a68ee369746afbe74845bb21b9cb9bbb7d817", size = 1052768, upload-time = "2026-07-16T02:01:45.752Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/a9/5a58aa12333ccdb610a61be031ca74ecf70b64bf97bb0fddd3d54e4d2aa8/camas-0.1.25-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:6a2c2f98005c3ca327128e4c9ee249850a2ab54aa56fe69abba014abd815981a", size = 1028956, upload-time = "2026-07-16T02:01:47.201Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/52/2813846c65220499892c92fd67ac49b8e13d4f20804001e5ef3933ff70da/camas-0.1.25-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:0f13944024488f90b0ff9d148b23171287313268b6d2d2881c1a2add5a6a9bb7", size = 1047711, upload-time = "2026-07-16T02:01:48.563Z" },
+    { url = "https://files.pythonhosted.org/packages/87/5b/0849e61276a87344cd2a661eac2867c773f7cfd31b687583709b6ca3be1d/camas-0.1.25-cp314-cp314-win_amd64.whl", hash = "sha256:f28e1ae3057793cfa76e4287d82bec38340ec97ecf48d8ece1a813f6e88d8eb7", size = 592980, upload-time = "2026-07-16T02:01:50.17Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -74,6 +88,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "camas" },
     { name = "mypy" },
     { name = "pyright" },
     { name = "pytest" },
@@ -85,6 +100,7 @@ requires-dist = [{ name = "cyclopts", specifier = ">=3" }]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "camas", specifier = "==0.1.25" },
     { name = "mypy", specifier = ">=1.13" },
     { name = "pyright", specifier = ">=1.1.408" },
     { name = "pytest", specifier = ">=8" },
