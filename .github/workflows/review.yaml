@@ -34,6 +34,9 @@ jobs:
       api_base_url:  ${{ vars.API_BASE_URL }}
       model_full:    deepseek-v4-flash
       model_mechanic: deepseek-v4-flash
+      # Allow the runner's own Actions control plane so harden-runner's egress block never severs the
+      # runner-to-service connection mid-review — GitHub kills a runner that loses it ("shutdown signal").
+      extra_endpoints: "*.actions.githubusercontent.com:443"
       # STATIC review (time limits + grace periods are the reusable workflow's defaults: 24m + 12m · 6m + 3m).
     secrets:
       MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
