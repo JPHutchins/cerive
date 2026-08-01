@@ -32,7 +32,7 @@ jobs:
       conclusion:    ${{ github.event.workflow_run.conclusion }}
       trigger_event: ${{ github.event.workflow_run.event }}
       api_base_url:  ${{ vars.API_BASE_URL }}
-      model_full:    deepseek-v4-pro
+      model_full:    deepseek-v4-flash
       model_mechanic: deepseek-v4-flash
       # STATIC review (time limits + grace periods are the reusable workflow's defaults: 24m + 12m · 6m + 3m).
     secrets:
