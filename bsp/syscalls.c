@@ -36,7 +36,7 @@ _Pragma("GCC diagnostic ignored \"-Wanalyzer-infinite-loop\"")
 __attribute__((__noreturn__)) void _exit(int const code) {
 	long const args[2] = {adp_stopped_application_exit, code};
 	semihost(sys_exit_extended, (void *) args);
-	for (; ; ) {
+	for (;;) {
 	}
 }
 _Pragma("GCC diagnostic pop")

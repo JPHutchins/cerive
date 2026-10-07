@@ -57,7 +57,7 @@ size_t study_frame_hash(Frame const * const s) {
 int study_span_debug(Span const * const s, char * const b, size_t const n) {
 	return Span_debug(s, b, n);
 }
-Span study_span_new(Point *const first, Point **const rows, int32_t const len) {
+Span study_span_new(Point * const first, Point * * const rows, int32_t const len) {
 	return Span_new(first, rows, len);
 }
 bool study_span_eq(Span const * const a, Span const * const b) {

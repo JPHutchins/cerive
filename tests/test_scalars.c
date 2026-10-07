@@ -553,27 +553,28 @@ static int empty_struct(void) {
 }
 
 int main(void) {
-	int const fails =
-		scalar_bool()
-		+ scalar_char()
-		+ scalar_i8()
-		+ scalar_i16()
-		+ scalar_i32()
-		+ scalar_i64()
-		+ scalar_u8()
-		+ scalar_u16()
-		+ scalar_u32()
-		+ scalar_u64()
-		+ scalar_size()
-		+ scalar_float()
-		+ scalar_double()
-		+ scalar_int()
-		+ scalar_unsigned()
-		+ scalar_long()
-		+ scalar_ulong()
-		+ scalar_llong()
-		+ scalar_ullong()
-		+ empty_struct();
+	int const fails = (
+		scalar_bool() +
+		scalar_char() +
+		scalar_i8() +
+		scalar_i16() +
+		scalar_i32() +
+		scalar_i64() +
+		scalar_u8() +
+		scalar_u16() +
+		scalar_u32() +
+		scalar_u64() +
+		scalar_size() +
+		scalar_float() +
+		scalar_double() +
+		scalar_int() +
+		scalar_unsigned() +
+		scalar_long() +
+		scalar_ulong() +
+		scalar_llong() +
+		scalar_ullong() +
+		empty_struct()
+	);
 
 	puts(fails == 0 ? "all tests passed" : "FAILURES");
 	return fails;

@@ -59,7 +59,7 @@ static int pointer_fields(void) {
 
 	Point p0 = Point_new(1, 2);
 	Point p1 = Point_new(3, 4);
-	Point *rows[] = {&p0, &p1};
+	Point * rows[] = {&p0, &p1};
 
 	Span const s = Span_new(&p0, rows, 2);
 	CHECK(s.first == &p0 && s.rows == rows && s.len == 2);
@@ -155,7 +155,7 @@ static int fluent_construct(void) {
 	CHECK(partial.edge.a.x == 0 && partial.edge.b.y == 0);
 
 	Point a = CERIVE_NEW(Point, .x = 1, .y = 2);
-	Point *rows[] = {&a};
+	Point * rows[] = {&a};
 	Span const s = CERIVE_NEW(Span, .first = &a, .rows = rows, .len = 1);
 	CHECK(s.first == &a && s.rows == rows && s.len == 1);
 
@@ -242,9 +242,15 @@ static int union_match(void) {
 	for (size_t i = 0; i < sizeof shapes / sizeof shapes[0]; ++i) {
 		int32_t got = -1;
 		MATCH(shapes[i]) {
-			CASE(Point, p) { got = p->x; }
-			CASE(Line, l) { got = l->a.x; }
-			CASE(Frame, f) { got = f->id; }
+			CASE(Point, p) {
+				got = p->x;
+			}
+			CASE(Line, l) {
+				got = l->a.x;
+			}
+			CASE(Frame, f) {
+				got = f->id;
+			}
 		}
 		CHECK(got == want[i]);
 	}
@@ -257,8 +263,8 @@ static int triple_pointer(void) {
 	int fails = 0;
 
 	Point p = Point_new(1, 2);
-	Point *p_ptr = &p;
-	Point **pp = &p_ptr;
+	Point * p_ptr = &p;
+	Point * * pp = &p_ptr;
 
 	TripleP const t = TripleP_new(pp, 10);
 	CHECK(t.ptr == pp && t.seq == 10);
@@ -285,7 +291,7 @@ static int many_variant_union(void) {
 	int fails = 0;
 
 	Many const m0 = Many_new(Alpha, .val = 10);
-	Many const m1 = Many_new(Beta, .val = 2.5f);
+	Many const m1 = Many_new(Beta, .val = 2.5);
 	Many const m2 = Many_new(Gamma, .val = 3.14);
 	Many const m3 = Many_new(Delta, .val = 'X');
 	Many const m4 = Many_new(Epsilon, .val = 999);
@@ -302,15 +308,25 @@ static int many_variant_union(void) {
 	CHECK(!Many_eq(&m0, &m1));
 
 	MATCH(m0) {
-		CASE(Alpha, a) { CHECK(a->val == 10); }
-		CASE(Beta, b) { (void) b;
-			CHECK(!"should not reach"); }
-		CASE(Gamma, g) { (void) g;
-			CHECK(!"should not reach"); }
-		CASE(Delta, d) { (void) d;
-			CHECK(!"should not reach"); }
-		CASE(Epsilon, e) { (void) e;
-			CHECK(!"should not reach"); }
+		CASE(Alpha, a) {
+			CHECK(a->val == 10);
+		}
+		CASE(Beta, b) {
+			(void) b;
+			CHECK(!"should not reach");
+		}
+		CASE(Gamma, g) {
+			(void) g;
+			CHECK(!"should not reach");
+		}
+		CASE(Delta, d) {
+			(void) d;
+			CHECK(!"should not reach");
+		}
+		CASE(Epsilon, e) {
+			(void) e;
+			CHECK(!"should not reach");
+		}
 	}
 
 	return fails;
@@ -404,10 +420,12 @@ static int match_with_break(void) {
 			}
 			got = p->x;
 		}
-		CASE(Line, l) { (void) l;
+		CASE(Line, l) {
+			(void) l;
 			got = -2;
 		}
-		CASE(Frame, f) { (void) f;
+		CASE(Frame, f) {
+			(void) f;
 			got = -3;
 		}
 	}
@@ -462,7 +480,8 @@ static int if_let(void) {
 
 	/* else branch taken when variant doesn't match. */
 	got = -1;
-	if LET(point, Frame, f) { (void) f;
+	if LET(point, Frame, f) {
+		(void) f;
 		got = 99;
 	} else {
 		got = 42;
@@ -487,10 +506,14 @@ static int match_with_continue(void) {
 				sum += p->x;
 				continue;
 			}
-			CASE(Line, l) { (void) l;
-				sum = -99; }
-			CASE(Frame, f) { (void) f;
-				sum = -99; }
+			CASE(Line, l) {
+				(void) l;
+				sum = -99;
+			}
+			CASE(Frame, f) {
+				(void) f;
+				sum = -99;
+			}
 		}
 		sum = -99;
 	}

@@ -10,4 +10,4 @@
  * (the Constructor trait), which remains for positional construction.
  */
 
-#define CERIVE_NEW(T, ...) (T){__VA_ARGS__}
+#define CERIVE_NEW(T, ...) (T) {__VA_ARGS__}

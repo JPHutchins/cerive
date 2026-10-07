@@ -5,11 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     # Task runner + MCP server: tasks.py is the SSOT for validation (devs, CI, agents).
-    camas.url = "github:JPHutchins/camas/0.1.25";
+    camas.url = "github:JPHutchins/camas/0.1.29";
 
     # Zero-config C formatter (Rust, no flake of its own) for the agent autofix node.
     jphfmt = {
-      url = "github:JPHutchins/jphfmt/v0.1.3";
+      url = "github:JPHutchins/jphfmt/v0.3.0";
       flake = false;
     };
   };
@@ -22,7 +22,7 @@
       packages = forAllSystems (system: pkgs: {
         jphfmt = pkgs.rustPlatform.buildRustPackage {
           pname = "jphfmt";
-          version = "0.1.3";
+          version = "0.3.0";
           src = jphfmt;
           cargoLock.lockFile = jphfmt + "/Cargo.lock";
         };

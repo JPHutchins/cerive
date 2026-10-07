@@ -43,8 +43,12 @@ __attribute__((nonnull(1))) static inline int Point_debug(
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
 	return off;
 }
-static inline Point Point_new(int32_t const x, int32_t const y) { return (Point) {.x = x, .y = y}; }
-static inline Point Point_default(void) { return (Point) {}; }
+static inline Point Point_new(int32_t const x, int32_t const y) {
+	return (Point){.x = x, .y = y};
+}
+static inline Point Point_default(void) {
+	return (Point){};
+}
 __attribute__((nonnull(1, 2))) static inline bool Point_eq(
 	Point const * const a,
 	Point const * const b
@@ -96,8 +100,12 @@ __attribute__((nonnull(1))) static inline int Line_debug(
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
 	return off;
 }
-static inline Line Line_new(Point const a, Point const b) { return (Line) {.a = a, .b = b}; }
-static inline Line Line_default(void) { return (Line) {}; }
+static inline Line Line_new(Point const a, Point const b) {
+	return (Line){.a = a, .b = b};
+}
+static inline Line Line_default(void) {
+	return (Line){};
+}
 __attribute__((nonnull(1, 2))) static inline bool Line_eq(
 	Line const * const a,
 	Line const * const b
@@ -152,8 +160,12 @@ __attribute__((nonnull(1))) static inline int Frame_debug(
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
 	return off;
 }
-static inline Frame Frame_new(Line const edge, int32_t const id) { return (Frame) {.edge = edge, .id = id}; }
-static inline Frame Frame_default(void) { return (Frame) {}; }
+static inline Frame Frame_new(Line const edge, int32_t const id) {
+	return (Frame){.edge = edge, .id = id};
+}
+static inline Frame Frame_default(void) {
+	return (Frame){};
+}
 __attribute__((nonnull(1, 2))) static inline bool Frame_eq(
 	Frame const * const a,
 	Frame const * const b
@@ -186,8 +198,8 @@ __attribute__((nonnull(1))) static inline size_t Frame_hash(Frame const * const 
 }
 
 typedef struct Span {
-	Point *first;
-	Point **rows;
+	Point * first;
+	Point * * rows;
 	int32_t len;
 } Span;
 __attribute__((nonnull(1))) static inline int Span_debug(
@@ -218,10 +230,12 @@ __attribute__((nonnull(1))) static inline int Span_debug(
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
 	return off;
 }
-static inline Span Span_new(Point *const first, Point **const rows, int32_t const len) {
-	return (Span) {.first = first, .rows = rows, .len = len};
+static inline Span Span_new(Point * const first, Point * * const rows, int32_t const len) {
+	return (Span){.first = first, .rows = rows, .len = len};
 }
-static inline Span Span_default(void) { return (Span) {}; }
+static inline Span Span_default(void) {
+	return (Span){};
+}
 __attribute__((nonnull(1, 2))) static inline bool Span_eq(
 	Span const * const a,
 	Span const * const b
@@ -284,9 +298,11 @@ __attribute__((nonnull(1))) static inline int Boxed_debug(
 	return off;
 }
 static inline Boxed Boxed_new(Point const origin, int32_t const seq) {
-	return (Boxed) {.origin = origin, .seq = seq};
+	return (Boxed){.origin = origin, .seq = seq};
 }
-static inline Boxed Boxed_default(void) { return (Boxed) {}; }
+static inline Boxed Boxed_default(void) {
+	return (Boxed){};
+}
 __attribute__((nonnull(1, 2))) static inline bool Boxed_eq(
 	Boxed const * const a,
 	Boxed const * const b

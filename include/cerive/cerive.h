@@ -74,11 +74,11 @@
 #define CERIVE_P_init_pointer(star, type, name) .name = name,
 #define CERIVE_Constructor(T) \
 	static inline T T##_new(CERIVE_P_drop_first(T##_FIELDS(CERIVE_P_param))) { \
-		return (T) {T##_FIELDS(CERIVE_P_init)}; \
+		return (T){T##_FIELDS(CERIVE_P_init)}; \
 	}
 
 #define CERIVE_Default(T) \
-	static inline T T##_default(void) { return (T) {}; }
+	static inline T T##_default(void) { return (T){}; }
 
 #define CERIVE_P_eq(...) CERIVE_P_dispatch(CERIVE_P_eq, __VA_ARGS__)
 #define CERIVE_P_eq_scalar(type, name) &&a->name == b->name
