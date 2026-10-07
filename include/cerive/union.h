@@ -7,22 +7,6 @@
 #include "each.h"
 #include "new.h"
 
-#ifndef CERIVE_P_assert
-#	ifdef CERIVE_NO_ASSERT
-#		define CERIVE_P_assert(ptr) ((void) 0)
-#	else
-#		define CERIVE_P_assert(ptr) \
-	do { \
-		_Pragma("GCC diagnostic push") \
-		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
-		if ((uintptr_t)(ptr) == 0) { \
-			__builtin_trap(); \
-		} \
-		_Pragma("GCC diagnostic pop") \
-	} while (0)
-#	endif
-#endif
-
 /*
  * Tagged unions. A variant token names three things in three different C
  * namespaces: the union member, the member's struct type, and -- with a `_tag`
@@ -68,7 +52,6 @@
 #	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
-		CERIVE_P_assert(self); \
 		switch (self->tag) { \
 			CERIVE_P_union_over(CERIVE_P_union_debug_case, T) \
 		} \
@@ -79,8 +62,6 @@
 #define CERIVE_UNION_PartialEq(T) \
 	__attribute__((nonnull(1, 2))) \
 	static inline bool T##_eq(T const * const a, T const * const b) { \
-		CERIVE_P_assert(a); \
-		CERIVE_P_assert(b); \
 		if (a->tag != b->tag) { \
 			return false; \
 		} \
