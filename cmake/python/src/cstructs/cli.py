@@ -30,8 +30,16 @@ def expand(file: Path) -> None:
 
 
 @app.command
-def report(matrix_dir: Path, variants: Tokens, cpus: Tokens, opts: Tokens) -> None:
-    """Render the equivalence grid + asm diffs from the matrix artifacts."""
+def report(
+    matrix_dir: Path,
+    variants: Tokens,
+    cpus: Tokens,
+    opts: Tokens,
+    summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
+) -> int:
+    """Render the equivalence grid + asm diffs from the matrix artifacts, appending them to
+    --summary (the GitHub job summary under Actions); fails when the candidates diverge.
+    """
     canon: dict[Key, str] = {}
     sizes: dict[Key, int] = {}
     totals: dict[tuple[str, str, str], int] = {}
@@ -57,10 +65,14 @@ def report(matrix_dir: Path, variants: Tokens, cpus: Tokens, opts: Tokens) -> No
                         totals[(v, c, o)] = info.text
                 else:
                     print(f"warning: {size_path} not found", file=sys.stderr)
-    table = render_report(variants, cpus, opts, canon, sizes, totals)
-    (matrix_dir / "report.md").write_text(table + "\n")
-    print(f"\n{table}\n")
+    rendered = render_report(variants, cpus, opts, canon, sizes, totals)
+    (matrix_dir / "report.md").write_text(rendered.markdown + "\n")
+    if summary is not None:
+        with summary.open("a") as f:
+            f.write(rendered.markdown + "\n")
+    print(f"\n{rendered.markdown}\n")
     print(f"full report: {matrix_dir}/report.md")
+    return 1 if rendered.divergences else 0
 
 
 @app.command

@@ -20,3 +20,8 @@ jobs:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-
       - run: nix develop --command camas
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: evidence-matrix
+          path: build/matrix/
