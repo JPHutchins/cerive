@@ -3,10 +3,7 @@
     "camas": {
       "type": "stdio",
       "command": "uvx",
-      "args": [
-        "camas[mcp]==0.1.22",
-        "mcp"
-      ]
+      "args": ["camas[mcp]==0.1.29", "mcp"]
     }
   }
 }
