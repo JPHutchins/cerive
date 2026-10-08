@@ -7,18 +7,6 @@
 #include "each.h"
 #include "new.h"
 
-/*
- * Tagged unions. A variant token names three things in three different C
- * namespaces: the union member, the member's struct type, and -- with a `_tag`
- * suffix -- the enum discriminant. The suffix keeps the discriminant from
- * colliding with the struct typedef, so member types stay typedef'd; callers
- * always pass the bare token and the macros paste `_tag`.
- *
- * A union T is described by `T##_VARIANTS(X)` listing member type names.
- * CERIVE_UNION(T, traits...) generates the enum + struct, then fans out the named
- * traits like CERIVE does -- CERIVE_UNION(Shape, Debug, PartialEq).
- */
-
 #define CERIVE_P_union_over(map, T) T##_VARIANTS(map)
 #define CERIVE_P_union_tag(variant) variant##_tag,
 #define CERIVE_P_union_member(variant) variant variant;
@@ -71,13 +59,7 @@
 		unreachable(); \
 	}
 
-/* construct: declare `#define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)`,
- * then `Shape_new(Point, .x = 1, .y = 2)`
- *
- * The manual #define is REQUIRED because the C preprocessor cannot produce a
- * #define directive from macro expansion (C23 6.10.3.4). There is no way for
- * CERIVE_UNION itself to generate the T_new shorthand -- the two-line pattern
- * above is the intended API. */
+/* A macro expansion cannot produce a #define (C23 6.10.3.4). */
 #define CERIVE_UNION_NEW(T, variant, ...) \
 	(T){.tag = variant##_tag, .variant = {__VA_ARGS__}}
 

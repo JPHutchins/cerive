@@ -89,6 +89,16 @@ add_library(test_compile_time OBJECT tests/test_compile_time.c)
 target_link_libraries(test_compile_time PRIVATE cerive)
 target_include_directories(test_compile_time PRIVATE variants/cerive)
 
+add_library(test_rejects OBJECT tests/test_rejects.c)
+target_link_libraries(test_rejects PRIVATE cerive)
+foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER)
+	add_test(NAME rejects_${rejected}
+		COMMAND ${CMAKE_C_COMPILER} -std=c23 -Wall -Wextra -Werror -fsyntax-only
+			-I${CMAKE_SOURCE_DIR}/include -DREJECT_${rejected}
+			${CMAKE_SOURCE_DIR}/tests/test_rejects.c)
+	set_tests_properties(rejects_${rejected} PROPERTIES WILL_FAIL TRUE)
+endforeach()
+
 include(cmake/matrix.cmake)
 foreach(v ${VARIANTS})
 	add_matrix(${v} ${CMAKE_SOURCE_DIR}/study/study.c)

@@ -2,15 +2,6 @@
 
 #include <stddef.h>
 
-/*
- * FNV-1a hash. <T>_hash folds each field into the accumulator the same way Eq
- * compares them -- field by field, so equal values hash equal (hashing the raw
- * struct bytes would fold in indeterminate padding). Scalar and pointer fields
- * hash their own bytes (a pointer by its address, matching by-address Eq); record
- * fields recurse and mix the sub-hash. The two helpers are defined once in
- * src/cerive.c; the constants are needed at the call site by the generated code.
- */
-
 enum : size_t {
 	cerive_hash_offset = 2166136261u,
 	cerive_hash_prime = 16777619u,
