@@ -1,4 +1,5 @@
 config CERIVE
 	bool "cerive: derive struct methods via X-macros"
+	select REQUIRES_STD_C23
 	help
 	  The cerive derive library.

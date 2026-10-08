@@ -1,0 +1,4 @@
+tests:
+  cerive.module:
+    platform_allow:
+      - qemu_cortex_m3
