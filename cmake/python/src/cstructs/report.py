@@ -198,7 +198,7 @@ def _judge(
     }
     if not bodies:
         return Absent()
-    if len(bodies) < len(variants):
+    if any(Key(v, cell.cpu, cell.opt, cell.fn) not in canon for v in variants):
         return Missing()
     if len(set(bodies.values())) == 1:
         return Identical()

@@ -10,18 +10,19 @@ def _is_system(path: str, flags: str) -> bool:
     return path.startswith("<") or "3" in flags.split()
 
 
-def _keeping_after(keeping: bool, line: str) -> bool:
-    marker = _MARKER.match(line)
+def _keeping_after(keeping: bool, marked: tuple[str, re.Match[str] | None]) -> bool:
+    marker = marked[1]
     return keeping if marker is None else not _is_system(marker.group(1), marker.group(2))
 
 
 def _project_lines(lines: list[str]) -> str:
+    marked = [(line, _MARKER.match(line)) for line in lines]
     return "\n".join(
         line
-        for line, keeping in zip(
-            lines, accumulate(lines, _keeping_after, initial=False), strict=False
+        for (line, marker), keeping in zip(
+            marked, accumulate(marked, _keeping_after, initial=False), strict=False
         )
-        if keeping and _MARKER.match(line) is None
+        if keeping and marker is None
     )
 
 
