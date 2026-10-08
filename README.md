@@ -43,6 +43,7 @@ int main(void) {
 		&& Point_cmp(&line.a, &line.b) == cerive_less
 		&& right_edge(Shape_new(Line, .a = line.a, .b = line.b)) == 3
 		&& strcmp(text, "Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } }") == 0
+		&& Line_debug_len(&line) == Line_debug(&line, sizeof text, text)
 	);
 }
 ```

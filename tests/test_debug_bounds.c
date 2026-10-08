@@ -1,15 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "check.h"
 #include "test_types.h"
-
-#define CHECK(cond) \
-	do { \
-		if (!(cond)) { \
-			++fails; \
-			printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); \
-		} \
-	} while (0)
 
 static int nested_struct(void) {
 	int fails = 0;

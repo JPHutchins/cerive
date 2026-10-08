@@ -20,7 +20,9 @@ char * cerive_buf_at(size_t const cap, char buf[static const cap], int const off
 	}
 
 #define CERIVE_P_debug_len(T) \
-	__attribute__((nonnull(1))) static inline int T##_debug_len(T const * const self) { \
+	[[maybe_unused]] __attribute__((nonnull(1))) static inline int T##_debug_len( \
+		T const * const self \
+	) { \
 		char scratch[1]; \
 		return T##_debug(self, sizeof scratch, scratch); \
 	}

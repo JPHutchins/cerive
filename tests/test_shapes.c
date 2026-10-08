@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "check.h"
 #include "shapes.h"
 
 #include <cerive/match.h>
@@ -9,14 +10,6 @@
 #	include "test_types.h"
 #	define CERIVE_HAS_EXTRA_TYPES 1
 #endif
-
-#define CHECK(cond) \
-	do { \
-		if (!(cond)) { \
-			++fails; \
-			printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); \
-		} \
-	} while (0)
 
 static int flat_struct(void) {
 	int fails = 0;
