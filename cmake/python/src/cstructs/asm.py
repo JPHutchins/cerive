@@ -1,4 +1,4 @@
-"""Canonicalize and diff compiler assembly so only real codegen differences show."""
+"""Assembly canonicalization and diffing."""
 
 import difflib
 import re
@@ -12,20 +12,11 @@ _DROP = re.compile(
 )
 _FUNC = re.compile(r"^\s*\.type\s+(\w+),\s*%function")
 _THUMB_FUNC = re.compile(r"^\s*\.thumb_func\s*$")
-# The Debug cursor helpers differ in name between the derived (cerive_buf_*) and
-# hand-written (hw_*) variants; collapse both to one token so -O0 asm compares.
-_HELPERS = {
-    "cerive_buf_at": "H_at",
-    "hw_at": "H_at",
-    "cerive_buf_remaining": "H_rem",
-    "hw_rem": "H_rem",
-}
-_HELPER = re.compile(r"\b(" + "|".join(map(re.escape, _HELPERS)) + r")\b")
 _LOCAL = re.compile(r"\.L\w+")
 
 
 def split_functions(asm: str) -> dict[str, str]:
-    r"""Map each `%function` symbol to its raw body (between `name:` and `.size`).
+    r"""Split assembly into function bodies.
 
     >>> split_functions("\t.type f, %function\nf:\n\tnop\n\t.size f, .-f\n")["f"].strip()
     'nop'
@@ -59,24 +50,23 @@ def split_functions(asm: str) -> dict[str, str]:
 
 
 def canonical(body: str) -> str:
-    r"""Drop noise (comments, CFI/debug/section directives), neutralize helper
-    symbol names and renumber local labels -- leaving comparable instructions.
+    r"""Canonicalize a function body for comparison.
 
     >>> canonical("\tbl\tcerive_buf_remaining\t@ x\n.L7:\n\tbx\tlr")
-    'bl\tH_rem\n.L0:\nbx\tlr'
+    'bl\tcerive_buf_remaining\n.L0:\nbx\tlr'
     """
     kept: list[str] = []
     for raw in body.splitlines():
         line = _COMMENT.sub("", raw).rstrip()
         if not line.strip() or _DROP.match(line):
             continue
-        kept.append(_HELPER.sub(lambda m: _HELPERS[m.group(1)], line).strip())
+        kept.append(line.strip())
     labels: dict[str, str] = {}
     return _LOCAL.sub(lambda m: labels.setdefault(m.group(0), f".L{len(labels)}"), "\n".join(kept))
 
 
 def instr_count(canon: str) -> int:
-    r"""Count instruction lines (excluding labels and data directives).
+    r"""Instruction count.
 
     >>> instr_count("mov\tr0, r1\n.L0:\nbx\tlr")
     2
@@ -87,7 +77,7 @@ def instr_count(canon: str) -> int:
 
 
 def diff_lines(a: str, b: str, a_label: str, b_label: str) -> str:
-    """Unified diff between two canonical bodies; empty string when identical."""
+    """Unified diff."""
     if a == b:
         return ""
     return "\n".join(
@@ -101,7 +91,7 @@ _SYM = re.compile(r"^[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+[TtWw]\s+(\w+)\s*$")
 
 
 def parse_syms(nm_output: str) -> dict[str, int]:
-    r"""Parse `nm --print-size` lines into {symbol: byte size}.
+    r"""Parse `nm --print-size` output.
 
     >>> parse_syms("00000000 00000018 T study_eq\n0000abcd t local_no_size")
     {'study_eq': 24}

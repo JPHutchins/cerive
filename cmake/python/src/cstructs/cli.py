@@ -1,4 +1,4 @@
-"""Command-line entry points; logic lives in the pure functions they call."""
+"""Command-line entry points."""
 
 import subprocess
 import sys
@@ -9,16 +9,17 @@ from cyclopts import App, Parameter
 
 from cstructs.asm import canonical, parse_syms, split_functions
 from cstructs.expand import strip_system_headers
+from cstructs.readme import c_examples
 from cstructs.report import Gap, Key, parse_size, render_report
 
-app = App(name="cstructs", help="String transforms backing the c-structs CMake build.")
+app = App(name="cstructs", help="cerive build tooling.")
 
 Tokens = Annotated[list[str], Parameter(consume_multiple=True)]
 
 
 @app.command
 def expand(file: Path) -> None:
-    """Strip system-header noise from a preprocessed file, in place."""
+    """Strip system headers from a preprocessed file."""
     try:
         file.write_text(strip_system_headers(file.read_text()))
     except FileNotFoundError:
@@ -77,8 +78,8 @@ def report(
                         Gap(c, o, f"{stem}.s and {stem}.sym define different functions")
                     )
                 if s_usable:
-                    canon.update({(v, c, o, fn): body for fn, body in bodies.items()})
-                sizes.update({(v, c, o, fn): size for fn, size in syms.items()})
+                    canon.update({Key(v, c, o, fn): body for fn, body in bodies.items()})
+                sizes.update({Key(v, c, o, fn): size for fn, size in syms.items()})
                 if info is not None:
                     totals[(v, c, o)] = info.text
     rendered = render_report(variants, cpus, opts, canon, sizes, totals, evidence_gaps)
@@ -96,8 +97,14 @@ def report(
 
 
 @app.command
+def readme_c(readme: Path, out: Path) -> None:
+    """Write the C examples of README to --out."""
+    out.write_text(c_examples(readme.read_text(encoding="utf-8")), encoding="utf-8")
+
+
+@app.command
 def capture(out: Path, *command: str) -> int:
-    """Run COMMAND, writing its stdout to --out (replaces shell redirects)."""
+    """Run COMMAND, writing its stdout to --out."""
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     sys.stderr.write(result.stderr)
     if result.returncode != 0:

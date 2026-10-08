@@ -372,11 +372,9 @@ static int ord_short_circuit_3fields(void) {
 	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 2, .c = 5}) == cerive_less);
 	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 2, .c = 0}) == cerive_greater);
 
-	/* Different 'a' should short-circuit before checking 'b' or 'c'. */
 	CHECK(Triple_cmp(&t, &(Triple){.a = 0, .b = 9, .c = 9}) == cerive_greater);
 	CHECK(Triple_cmp(&t, &(Triple){.a = 2, .b = 0, .c = 0}) == cerive_less);
 
-	/* Same 'a', different 'b' should short-circuit before 'c'. */
 	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 1, .c = 9}) == cerive_greater);
 	CHECK(Triple_cmp(&t, &(Triple){.a = 1, .b = 3, .c = 0}) == cerive_less);
 
@@ -392,7 +390,6 @@ static int debug_exact_buffer(void) {
 
 	CHECK(Triple_debug(&t, NULL, 0) == need);
 
-	/* Buffer of exactly need+1 bytes: fits with NUL terminator. */
 	char exact[need + 1];
 	CHECK(Triple_debug(&t, exact, sizeof exact) == need);
 	CHECK(strcmp(exact, expect) == 0);
@@ -408,8 +405,6 @@ static int match_with_break(void) {
 		Shape_new(Point, .x = 5, .y = 6),
 	};
 
-	/* A break inside an inner for-loop inside a CASE body breaks only that
-	 * inner loop, not the enclosing switch that MATCH opens. */
 	int32_t got = -1;
 	MATCH(shapes[0]) {
 		CASE(Point, p) {
@@ -444,7 +439,6 @@ static int nested_union_variant(void) {
 	CHECK(!Outer_eq(&o, &Outer_new(Inner, .NodeA = {.x = 9, .y = 9})));
 	CHECK(!Outer_eq(&o, &Outer_new(NodeC, .id = 1)));
 
-	/* Construct with the non-union variant (NodeC, a plain struct). */
 	Outer const c = Outer_new(NodeC, .id = 5);
 	CHECK(CERIVE_IS(c, NodeC));
 	CHECK(c.NodeC.id == 5);
@@ -478,7 +472,6 @@ static int if_let(void) {
 	}
 	CHECK(got == 3);
 
-	/* else branch taken when variant doesn't match. */
 	got = -1;
 	if LET(point, Frame, f) {
 		(void) f;
@@ -521,7 +514,7 @@ static int match_with_continue(void) {
 
 	return fails;
 }
-#endif /* CERIVE_HAS_EXTRA_TYPES */
+#endif
 
 int main(void) {
 	int const fails =

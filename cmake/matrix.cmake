@@ -10,9 +10,6 @@ find_program(ARM_OBJDUMP arm-none-eabi-objdump REQUIRED)
 find_program(ARM_SIZE arm-none-eabi-size REQUIRED)
 find_program(ARM_NM arm-none-eabi-nm REQUIRED)
 
-# add_matrix(<variant> <source>): for every (cpu, opt) cell, emit the
-# preprocessed expansion (.i), compiler assembly (.s), object disassembly
-# (.lst) and segment sizes (.size). Compile-only, so cpu is a free axis.
 function(add_matrix variant src)
 	file(GLOB_RECURSE hdrs CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/include/cerive/*.h)
 	list(APPEND hdrs ${CMAKE_SOURCE_DIR}/variants/${variant}/shapes.h)

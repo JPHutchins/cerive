@@ -4,35 +4,11 @@
 
 #include "union.h"
 
-/*
- * Pattern matching for cerive tagged unions -- an opt-in value-add. Import it
- * explicitly (`#include <cerive/match.h>`); <cerive/cerive.h> does NOT pull it in.
- *
- * MATCH/CASE and if-let use N3356 "if declarations" (a declaration as the controlling
- * clause of `if`) -- a C2Y feature (WG14 N3356), NOT C23, that gcc 15+ implements early
- * and clang 21 does not. The declaration binds a `variant const *` scoped to the arm, so
- * a wrong-field access won't compile and `break`/`continue` behave naturally. Everything
- * else in cerive (derive machinery, union construction, IS/NEW) is portable C23 and does
- * not need this header.
- *
- * CERIVE_IF_DECL gates the feature; define it yourself to force on/off. Without N3356,
- * including this header is still safe -- only *using* MATCH/CASE/if-let is a compile error.
- *
- *   #include <cerive/match.h>
- *
- *   MATCH (shape) {
- *       CASE (Point, p) { use(p->x); }
- *       CASE (Frame, f) { use(f->id); }
- *   }
- *
- *   if LET (shape, Point, p) { use(p->x); } else { ... }   // shape is not Point
- */
-
 #ifndef CERIVE_IF_DECL
 #	if defined(__STDC_VERSION__) && __STDC_VERSION__ > 202311L
-#		define CERIVE_IF_DECL 1 /* N3356 is standard from C2Y */
+#		define CERIVE_IF_DECL 1
 #	elif defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 15
-#		define CERIVE_IF_DECL 1 /* gcc 15+ accepts N3356 as an extension pre-C2Y */
+#		define CERIVE_IF_DECL 1
 #	else
 #		define CERIVE_IF_DECL 0
 #	endif
@@ -67,7 +43,6 @@
 
 #endif
 
-/* Short aliases (the one concession to brevity); #define CERIVE_NO_SHORT_NAMES to opt out. */
 #ifndef CERIVE_NO_SHORT_NAMES
 #	define MATCH CERIVE_MATCH
 #	define CASE CERIVE_CASE

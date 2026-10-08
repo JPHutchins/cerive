@@ -1,4 +1,4 @@
-"""Render a glanceable codegen comparison: equivalence grid + true asm diffs."""
+"""Evidence report rendering."""
 
 import re
 from typing import TYPE_CHECKING, NamedTuple
@@ -8,11 +8,18 @@ from cstructs.asm import diff_lines, instr_count
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-Key = tuple[str, str, str, str]  # impl, cpu, opt, function
+
+class Key(NamedTuple):
+    """A matrix lookup key."""
+
+    impl: str
+    cpu: str
+    opt: str
+    fn: str
 
 
 class SizeInfo(NamedTuple):
-    """Berkeley `size` segment byte counts for one translation unit."""
+    """`size` output for one object."""
 
     text: int
     data: int
@@ -41,7 +48,7 @@ def parse_size(output: str) -> SizeInfo | None:
 
 
 def _is_helper(fn: str) -> bool:
-    return fn.startswith(("cerive_", "hw_"))
+    return fn.startswith("cerive_")
 
 
 class Cell(NamedTuple):
@@ -53,7 +60,7 @@ class Cell(NamedTuple):
 
 
 class Gap(NamedTuple):
-    """Missing or unusable evidence for one core and optimization level."""
+    """An evidence gap."""
 
     cpu: str
     opt: str
@@ -114,7 +121,7 @@ def render_report(
     baseline = "handwritten" if "handwritten" in variants else (variants[-1] if variants else "")
     candidates = [v for v in variants if v != baseline]
     fns = sorted(
-        {k[3] for k in canon if not _is_helper(k[3])},
+        {k.fn for k in canon if not _is_helper(k.fn)},
         key=lambda s: (not s.startswith("study_"), s),
     )
 
@@ -129,7 +136,7 @@ def render_report(
             cells: list[str] = []
             present = False
             for opt in opts:
-                got = {v: canon.get((v, cpu, opt, fn)) for v in variants}
+                got = {v: canon.get(Key(v, cpu, opt, fn)) for v in variants}
                 have = [v for v in variants if got[v] is not None]
                 if not have:
                     cells.append("")
@@ -148,8 +155,8 @@ def render_report(
                     strat_breaks.append(Cell(fn, cpu, opt))
                     cells.append("⚠")
                 else:
-                    sz_a = sizes.get((candidates[0], cpu, opt, fn)) if candidates else None
-                    sz_b = sizes.get((baseline, cpu, opt, fn))
+                    sz_a = sizes.get(Key(candidates[0], cpu, opt, fn)) if candidates else None
+                    sz_b = sizes.get(Key(baseline, cpu, opt, fn))
                     delta = f"{sz_a - sz_b:+d}" if sz_a is not None and sz_b is not None else "≠"
                     cells.append(delta)
                 baseline_got = got.get(baseline)
@@ -162,7 +169,7 @@ def render_report(
                     if strat_diff and len(cand_here) >= 2
                     else (candidates[0], baseline)
                 )
-                cx, cy = canon.get((x, cpu, opt, fn)), canon.get((y, cpu, opt, fn))
+                cx, cy = canon.get(Key(x, cpu, opt, fn)), canon.get(Key(y, cpu, opt, fn))
                 if cx is not None and cy is not None:
                     d = diff_lines(cx, cy, x, y)
                     if d:
@@ -208,7 +215,7 @@ def render_report(
 
     cand_label = " ≡ ".join(candidates) if candidates else "(none)"
     head = ["# Evidence — codegen comparison", ""]
-    if len(candidates) >= 2:  # only meaningful with rival strategies to agree/disagree
+    if len(candidates) >= 2:
         head += [f"**{cand_label}:** " + verdict(strat_breaks, "❌"), ""]
     head += [
         f"**{cand_label} ≡ {baseline}:** " + verdict(base_mismatches, "❌"),
@@ -217,7 +224,7 @@ def render_report(
         *_overview(
             cpus,
             opts,
-            {(k[1], k[2]) for k in canon if not _is_helper(k[3])},
+            {(k.cpu, k.opt) for k in canon if not _is_helper(k.fn)},
             [*strat_breaks, *base_mismatches],
             evidence_gaps,
         ),

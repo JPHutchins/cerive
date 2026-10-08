@@ -3,13 +3,6 @@
 
 _Static_assert(sizeof(int) <= sizeof(size_t), "size_t must be at least as wide as int");
 
-/*
- * The shared runtime: the handful of non-generated helpers the generated <T>_debug
- * and <T>_hash call. Compiled once here so multiple translation units share a
- * single copy rather than each carrying a static-inline duplicate. The compiler
- * is still free to inline within this TU; cross-TU calls resolve to these.
- */
-
 size_t cerive_buf_remaining(size_t const cap, int const off) {
 	return (off >= 0 && (size_t) off < cap) ? cap - (size_t) off : 0;
 }

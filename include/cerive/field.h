@@ -4,66 +4,37 @@
 
 #include "each.h"
 
-/*
- * Field-kind inference. A field is written without a kind tag:
- *
- *     (int32_t, x)        scalar       -- compared/hashed inline, Debug via format
- *     (Point, edge)       record       -- recurses into the inner type's derives
- *     (Point const, edge) const_record -- same, qualifier kept in the declaration
- *     (*, Point, next)    pointer      -- by-address; the `*` is used literally
- *
- * The kind is recovered, not declared. Arity splits pointer (3) from value (2); a
- * value type is a scalar if registered below, a const_record if its type ends in
- * `const`, else a record. The CERIVE_P_scalar_<type> registry does double duty:
- * its presence marks a type as scalar, and its payload is that type's printf
- * format -- one entry, no second list.
- *
- * WARNING: Pointer fields MUST use the 3-arity form (*, Type, name). A 2-arity
- * field whose type contains '*' -- e.g. (int *, p) -- will be misclassified as
- * scalar because the is_scalar probe matches the leading token. Use the 3-arity
- * form (*, int *, p) for pointer-to-pointer.
- *
- * CERIVE_P_dispatch(prefix, field...) routes a field to the matching
- * prefix##_scalar / _record / _const_record / _pointer handler.
- */
-
-#define CERIVE_P_scalar(format) format, 1,
-#define CERIVE_P_scalar_bool CERIVE_P_scalar("%d")
-#define CERIVE_P_scalar_char CERIVE_P_scalar("%c")
-#define CERIVE_P_scalar_int8_t CERIVE_P_scalar("%" PRId8)
-#define CERIVE_P_scalar_int16_t CERIVE_P_scalar("%" PRId16)
-#define CERIVE_P_scalar_int32_t CERIVE_P_scalar("%" PRId32)
-#define CERIVE_P_scalar_int64_t CERIVE_P_scalar("%" PRId64)
-#define CERIVE_P_scalar_uint8_t CERIVE_P_scalar("%" PRIu8)
-#define CERIVE_P_scalar_uint16_t CERIVE_P_scalar("%" PRIu16)
-#define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32)
-#define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64)
-#define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu")
-#define CERIVE_P_scalar_float CERIVE_P_scalar("%g")
-#define CERIVE_P_scalar_double CERIVE_P_scalar("%g")
-#define CERIVE_P_scalar_int CERIVE_P_scalar("%d")
-#define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u")
-#define CERIVE_P_scalar_long CERIVE_P_scalar("%ld")
-#define CERIVE_P_scalar_unsigned_long CERIVE_P_scalar("%lu")
-#define CERIVE_P_scalar_long_long CERIVE_P_scalar("%lld")
-#define CERIVE_P_scalar_unsigned_long_long CERIVE_P_scalar("%llu")
+#define CERIVE_P_scalar(format, type) format, 1, type,
+#define CERIVE_P_scalar_bool CERIVE_P_scalar("%d", bool)
+#define CERIVE_P_scalar_char CERIVE_P_scalar("%c", char)
+#define CERIVE_P_scalar_int8_t CERIVE_P_scalar("%" PRId8, int8_t)
+#define CERIVE_P_scalar_int16_t CERIVE_P_scalar("%" PRId16, int16_t)
+#define CERIVE_P_scalar_int32_t CERIVE_P_scalar("%" PRId32, int32_t)
+#define CERIVE_P_scalar_int64_t CERIVE_P_scalar("%" PRId64, int64_t)
+#define CERIVE_P_scalar_uint8_t CERIVE_P_scalar("%" PRIu8, uint8_t)
+#define CERIVE_P_scalar_uint16_t CERIVE_P_scalar("%" PRIu16, uint16_t)
+#define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32, uint32_t)
+#define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64, uint64_t)
+#define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu", size_t)
+#define CERIVE_P_scalar_float CERIVE_P_scalar("%g", float)
+#define CERIVE_P_scalar_double CERIVE_P_scalar("%g", double)
+#define CERIVE_P_scalar_int CERIVE_P_scalar("%d", int)
+#define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u", unsigned)
+#define CERIVE_P_scalar_long CERIVE_P_scalar("%ld", long)
+#define CERIVE_P_scalar_unsigned_long CERIVE_P_scalar("%lu", unsigned long)
+#define CERIVE_P_scalar_long_long CERIVE_P_scalar("%lld", long long)
+#define CERIVE_P_scalar_unsigned_long_long CERIVE_P_scalar("%llu", unsigned long long)
 
 #define CERIVE_P_is_scalar(type) CERIVE_P_is_scalar_(CERIVE_P_scalar_##type, 0)
 #define CERIVE_P_is_scalar_(...) CERIVE_P_is_scalar__(__VA_ARGS__)
 #define CERIVE_P_is_scalar__(format, flag, ...) flag
+#define CERIVE_P_scalar_type(type) CERIVE_P_scalar_type_(CERIVE_P_scalar_##type)
+#define CERIVE_P_scalar_type_(...) CERIVE_P_scalar_type__(__VA_ARGS__)
+#define CERIVE_P_scalar_type__(format, flag, registered, ...) registered
 #define CERIVE_P_scalar_format(type) CERIVE_P_scalar_format_(CERIVE_P_scalar_##type)
 #define CERIVE_P_scalar_format_(...) CERIVE_P_scalar_format__(__VA_ARGS__)
 #define CERIVE_P_scalar_format__(format, ...) format
 
-/*
- * Opt-in const record members. A value field whose type ends in `const` --
- * `(Point const, edge)` -> `Point const edge;` -- keeps the qualifier in the
- * declaration, but the trait-fn paste base must drop it (else `Point const##_eq`
- * corrupts). CERIVE_P_strip_const pastes a vanishing `const_CERIVE_P_unconst` onto
- * the type's last token, so `Point const` -> `Point` (valid only on a const-ending
- * type, the only place it is used). const-qualified scalars need no help --
- * is_scalar keys on the leading token and the format ignores the rest.
- */
 #define const_CERIVE_P_unconst
 #define CERIVE_P_strip_const(type) CERIVE_P_cat(type, _CERIVE_P_unconst)
 #define const_CERIVE_P_probe ~, 1,

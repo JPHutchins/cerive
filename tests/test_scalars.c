@@ -12,11 +12,6 @@
 		} \
 	} while (0)
 
-/*
- * Scalar test types -- one per registered scalar. Each has a scalar field and
- * an int32_t discriminator to verify field ordering.
- */
-
 #define ScalarBool_FIELDS(X) \
 	X(bool, val) \
 	X(int32_t, id)
@@ -111,8 +106,6 @@ CERIVE(ScalarLLong, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 	X(unsigned_long_long, val) \
 	X(int32_t, id)
 CERIVE(ScalarULLong, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
-
-/* ---------- test functions ---------- */
 
 static int scalar_bool(void) {
 	int fails = 0;
@@ -535,6 +528,24 @@ static int scalar_ullong(void) {
 	return fails;
 }
 
+static int hash_ignores_padding(void) {
+	int fails = 0;
+
+	ScalarI8 zeroed;
+	ScalarI8 garbage;
+	memset(&zeroed, 0x00, sizeof zeroed);
+	memset(&garbage, 0xA5, sizeof garbage);
+	zeroed.val = -12;
+	zeroed.id = 1;
+	garbage.val = -12;
+	garbage.id = 1;
+	CHECK(memcmp(&zeroed, &garbage, sizeof zeroed) != 0);
+	CHECK(ScalarI8_eq(&zeroed, &garbage));
+	CHECK(ScalarI8_hash(&zeroed) == ScalarI8_hash(&garbage));
+
+	return fails;
+}
+
 static int empty_struct(void) {
 	int fails = 0;
 
@@ -573,6 +584,7 @@ int main(void) {
 		scalar_ulong() +
 		scalar_llong() +
 		scalar_ullong() +
+		hash_ignores_padding() +
 		empty_struct()
 	);
 

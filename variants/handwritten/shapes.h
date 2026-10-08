@@ -11,12 +11,6 @@
 #include <cerive/ord.h>
 #include <cerive/union.h>
 
-/* Baseline: the same API a careful engineer would write by hand -- offset-cursor
- * Debug, recursive composition, switch-dispatched sum -- to diff the derives
- * against. It uses cerive's shared runtime helpers (cerive_buf_*, cerive_hash_*),
- * exactly as the derived code does, so the comparison isolates the generated
- * logic rather than the primitives. */
-
 typedef struct Point {
 	int32_t x;
 	int32_t y;

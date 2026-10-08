@@ -1,9 +1,9 @@
 from cstructs.asm import canonical, diff_lines, instr_count, parse_syms, split_functions
 
 
-def test_canonical_neutralizes_helpers_and_labels() -> None:
+def test_canonical_renumbers_local_labels() -> None:
     a = canonical("\tbl\tcerive_buf_remaining\n.L9:\n\tbx\tlr")
-    b = canonical("\tbl\thw_rem\n.L3:\n\tbx\tlr")
+    b = canonical("\tbl\tcerive_buf_remaining\n.L3:\n\tbx\tlr")
     assert a == b
 
 

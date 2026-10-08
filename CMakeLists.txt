@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
 
-# As a Zephyr module: add the include path and compile the one runtime source.
 if(DEFINED ZEPHYR_BASE AND COMMAND zephyr_library)
 	if(CONFIG_CERIVE)
 		zephyr_library()
@@ -12,9 +11,6 @@ endif()
 
 project(cerive C ASM)
 
-# The library: the derive machinery is header-only macros; src/cerive.c is the one
-# compiled TU holding the shared runtime helpers. Usable via add_subdirectory or
-# FetchContent as `cerive::cerive`.
 add_library(cerive STATIC src/cerive.c)
 add_library(cerive::cerive ALIAS cerive)
 target_include_directories(cerive PUBLIC
@@ -22,7 +18,6 @@ target_include_directories(cerive PUBLIC
 	$<INSTALL_INTERFACE:include>)
 target_compile_features(cerive PUBLIC c_std_23)
 
-# Everything below is the evidence bench (ARM/QEMU); only when built standalone.
 if(NOT PROJECT_IS_TOP_LEVEL)
 	return()
 endif()
@@ -45,7 +40,6 @@ set(ARM_OPTS -mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion
 	-ffunction-sections -fdata-sections)
 add_compile_options(${ARM_OPTS})
-# cerive was created before the directory options above, so flag it explicitly.
 target_compile_options(cerive PRIVATE ${ARM_OPTS})
 add_link_options(-mcpu=${ARM_CPU} -mthumb
 	-nostartfiles -Wl,--gc-sections --specs=nano.specs
@@ -55,7 +49,6 @@ add_library(bsp OBJECT bsp/startup.c bsp/syscalls.c)
 
 find_program(QEMU qemu-system-arm REQUIRED)
 
-# CMake stays declarative; string transforms live in the `cstructs` python pkg.
 include(cmake/cstructs.cmake)
 
 enable_testing()
@@ -69,13 +62,11 @@ foreach(v ${VARIANTS})
 			-kernel $<TARGET_FILE:test_${v}>)
 	set_tests_properties(${v} PROPERTIES TIMEOUT 30)
 
-	# Compiled only so study.c lands in compile_commands.json (clangd coverage).
-	add_library(study_${v} OBJECT study/study.c)
-	target_link_libraries(study_${v} PRIVATE cerive)
-	target_include_directories(study_${v} PRIVATE variants/${v})
+	add_library(clangd_index_study_${v} OBJECT study/study.c)
+	target_link_libraries(clangd_index_study_${v} PRIVATE cerive)
+	target_include_directories(clangd_index_study_${v} PRIVATE variants/${v})
 endforeach()
 
-# Extended scalar tests -- use the cerive variant only (not a comparison target).
 add_executable(test_scalars tests/test_scalars.c $<TARGET_OBJECTS:bsp>)
 target_link_libraries(test_scalars PRIVATE cerive)
 target_include_directories(test_scalars PRIVATE variants/cerive)
@@ -84,10 +75,36 @@ add_test(NAME scalars
 		-kernel $<TARGET_FILE:test_scalars>)
 set_tests_properties(scalars PROPERTIES TIMEOUT 30)
 
-# Compile-time validation (compiled only, not run under QEMU).
 add_library(test_compile_time OBJECT tests/test_compile_time.c)
 target_link_libraries(test_compile_time PRIVATE cerive)
 target_include_directories(test_compile_time PRIVATE variants/cerive)
+
+set(README_EXAMPLES ${CMAKE_BINARY_DIR}/readme_examples.c)
+add_custom_command(OUTPUT ${README_EXAMPLES}
+	COMMAND ${CSTRUCTS} readme-c --readme ${CMAKE_SOURCE_DIR}/README.md --out ${README_EXAMPLES}
+	DEPENDS ${CMAKE_SOURCE_DIR}/README.md ${CSTRUCTS_SRCS} ${CSTRUCTS_STAMP}
+	VERBATIM)
+add_executable(test_readme ${README_EXAMPLES} $<TARGET_OBJECTS:bsp>)
+target_link_libraries(test_readme PRIVATE cerive)
+add_test(NAME readme
+	COMMAND ${QEMU} -M ${QEMU_MACHINE} -nographic -semihosting
+		-kernel $<TARGET_FILE:test_readme>)
+set_tests_properties(readme PROPERTIES TIMEOUT 30)
+
+add_library(test_rejects OBJECT tests/test_rejects.c)
+target_link_libraries(test_rejects PRIVATE cerive)
+set(REJECT_THIRTEEN_TRAITS_DIAGNOSTIC "in expansion of macro .CERIVE_P_over.")
+set(REJECT_TWO_ARITY_POINTER_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
+set(REJECT_MULTIWORD_SCALAR_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
+set(REJECT_MATCH_WITHOUT_IF_DECL_DIAGNOSTIC "require N3356 if-declarations")
+foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER MULTIWORD_SCALAR MATCH_WITHOUT_IF_DECL)
+	add_test(NAME rejects_${rejected}
+		COMMAND ${CMAKE_C_COMPILER} -std=c23 -Wall -Wextra -Werror -fsyntax-only
+			-I${CMAKE_SOURCE_DIR}/include -DREJECT_${rejected}
+			${CMAKE_SOURCE_DIR}/tests/test_rejects.c)
+	set_tests_properties(rejects_${rejected} PROPERTIES
+		PASS_REGULAR_EXPRESSION "${REJECT_${rejected}_DIAGNOSTIC}")
+endforeach()
 
 include(cmake/matrix.cmake)
 foreach(v ${VARIANTS})
@@ -107,10 +124,6 @@ add_custom_target(report
 add_custom_target(evidence)
 add_dependencies(evidence report)
 
-# Clang static analyzer. Runs clang --analyze directly over each .c source file
-# since --analyze doesn't emit object files (it replaces codegen with analysis).
-# GCC -fanalyzer covers ARM analysis; this covers clang-only checkers on the host.
-# Requires: nix develop, `clang` on PATH.
 find_program(CLANG clang)
 if(CLANG)
 	set(CLANG_ANALYZE_FLAGS -std=c23 -Wall -Wextra -Wdouble-promotion -Werror

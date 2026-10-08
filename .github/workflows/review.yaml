@@ -20,14 +20,14 @@ jobs:
        github.event.workflow_run.conclusion == 'failure')
     uses: JPHutchins/code-review/.github/workflows/review-reusable.yaml@v0.1.0-alpha.64
     with:
-      head_sha:      ${{ github.event.workflow_run.head_sha }}
-      head_branch:   ${{ github.event.workflow_run.head_branch }}
-      head_repo:     ${{ github.event.workflow_run.head_repository.full_name }}
-      run_id:        ${{ github.event.workflow_run.id }}
-      conclusion:    ${{ github.event.workflow_run.conclusion }}
+      head_sha: ${{ github.event.workflow_run.head_sha }}
+      head_branch: ${{ github.event.workflow_run.head_branch }}
+      head_repo: ${{ github.event.workflow_run.head_repository.full_name }}
+      run_id: ${{ github.event.workflow_run.id }}
+      conclusion: ${{ github.event.workflow_run.conclusion }}
       trigger_event: ${{ github.event.workflow_run.event }}
-      api_base_url:  ${{ vars.API_BASE_URL }}
-      model_full:    deepseek-v4-pro[1m]
+      api_base_url: ${{ vars.API_BASE_URL }}
+      model_full: deepseek-v4-pro[1m]
       model_mechanic: deepseek-v4-pro[1m]
       subagent_model: deepseek-flash[1m]
       extra_endpoints: "*.actions.githubusercontent.com:443"

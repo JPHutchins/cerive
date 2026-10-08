@@ -12,28 +12,6 @@
 #include "ord.h"
 #include "union.h"
 
-/*
- * cerive -- derive struct methods from one field list, in standard C23.
- *
- *     #define Point_FIELDS(X) \
- *         X(int32_t, x) \
- *         X(int32_t, y)
- *     CERIVE(Point, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
- *
- * generates the struct typedef plus Point_debug / Point_new / Point_default /
- * Point_eq / Point_cmp / Point_hash. Each generator threads the operator over
- * `T##_FIELDS(X)` (no field-count ceiling) and dispatches per field on its
- * inferred kind (scalar / record / const_record / pointer; see field.h). The
- * generated code is intended to be byte-identical to the equivalent hand-written
- * functions at every optimization level.
- *
- * All generated functions are static inline. At -O1+ the compiler inlines the
- * trivial ones (Eq, Cmp, Hash, new, default) directly; the non-trivial Debug
- * function is kept by --gc-sections only when referenced, and the linker folds
- * identical copies via ICF. The evidence bench proves the resulting codegen is
- * byte-identical to hand-written functions placed in a single translation unit.
- */
-
 #define CERIVE_VERSION_MAJOR 0
 #define CERIVE_VERSION_MINOR 1
 #define CERIVE_VERSION_PATCH 0
@@ -42,7 +20,9 @@
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__
 
 #define CERIVE_P_decl(...) CERIVE_P_dispatch(CERIVE_P_decl, __VA_ARGS__)
-#define CERIVE_P_decl_scalar(type, name) type name;
+#define CERIVE_P_require_registered_type(type) \
+	static_assert(_Generic((type){}, CERIVE_P_scalar_type(type): 1, default: 0));
+#define CERIVE_P_decl_scalar(type, name) type name; CERIVE_P_require_registered_type(type)
 #define CERIVE_P_decl_record(type, name) type name;
 #define CERIVE_P_decl_const_record(type, name) type name;
 #define CERIVE_P_decl_pointer(star, type, name) type star name;
@@ -143,10 +123,7 @@
 #define CERIVE_P_debug_pointer(star, type, name) \
 	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), \
 		#name "=%p ", (void *) self->name);
-/*
- * Define CERIVE_NO_DEBUG before including this header to omit all <T>_debug
- * functions. On bare-metal targets this avoids linking snprintf from stdio.
- */
+
 #ifdef CERIVE_NO_DEBUG
 #	define CERIVE_Debug(T) \
 	__attribute__((nonnull(1))) \
@@ -157,7 +134,7 @@
 		return 0; \
 	}
 #else
-/* Total debug output must fit in INT_MAX. */
+
 #	define CERIVE_Debug(T) \
 	__attribute__((nonnull(1))) \
 	static inline int T##_debug( \
@@ -173,13 +150,4 @@
 	}
 #endif
 
-/*
- * Combinator: CERIVE(T, traits...) fans out to CERIVE_<trait>(T) for each named
- * trait -- CERIVE(Point, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash).
- * Struct must lead (it defines the type the rest reference).
- *
- * Up to 12 traits are supported by the count-and-unroll fan-out in each.h.
- * Constructor generates T_new() (not T_constructor) for conciseness at the
- * call site.
- */
 #define CERIVE(T, ...) CERIVE_P_over(CERIVE, T, __VA_ARGS__)
