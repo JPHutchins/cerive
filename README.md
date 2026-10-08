@@ -53,7 +53,7 @@ int main(void) {
 | usage | [tests/](tests/) |
 | tasks | `camas --list` · [tasks.py](tasks.py) |
 | toolchain | [flake.nix](flake.nix) |
-| evidence | the job summary of a [CI run](https://github.com/JPHutchins/cerive/actions/workflows/ci.yml?query=branch%3Amain) |
+| evidence | the job summary of a [CI run](https://github.com/JPHutchins/cerive/actions/workflows/ci.yaml?query=branch%3Amain) |
 
 ## License
 
