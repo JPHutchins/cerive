@@ -80,6 +80,18 @@ add_library(test_compile_time OBJECT tests/test_compile_time.c)
 target_link_libraries(test_compile_time PRIVATE cerive)
 target_include_directories(test_compile_time PRIVATE variants/cerive)
 
+set(README_EXAMPLES ${CMAKE_BINARY_DIR}/readme_examples.c)
+add_custom_command(OUTPUT ${README_EXAMPLES}
+	COMMAND ${CSTRUCTS} readme-c --readme ${CMAKE_SOURCE_DIR}/README.md --out ${README_EXAMPLES}
+	DEPENDS ${CMAKE_SOURCE_DIR}/README.md ${CSTRUCTS_SRCS} ${CSTRUCTS_STAMP}
+	VERBATIM)
+add_executable(test_readme ${README_EXAMPLES} $<TARGET_OBJECTS:bsp>)
+target_link_libraries(test_readme PRIVATE cerive)
+add_test(NAME readme
+	COMMAND ${QEMU} -M ${QEMU_MACHINE} -nographic -semihosting
+		-kernel $<TARGET_FILE:test_readme>)
+set_tests_properties(readme PROPERTIES TIMEOUT 30)
+
 add_library(test_rejects OBJECT tests/test_rejects.c)
 target_link_libraries(test_rejects PRIVATE cerive)
 foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER)

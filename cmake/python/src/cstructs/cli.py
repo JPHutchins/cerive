@@ -9,6 +9,7 @@ from cyclopts import App, Parameter
 
 from cstructs.asm import canonical, parse_syms, split_functions
 from cstructs.expand import strip_system_headers
+from cstructs.readme import c_examples
 from cstructs.report import Key, parse_size, render_report
 
 app = App(name="cstructs", help="cerive build tooling.")
@@ -89,6 +90,12 @@ def report(
     print(f"\n{rendered.markdown}\n")
     print(f"full report: {matrix_dir}/report.md")
     return 1 if rendered.failures else 0
+
+
+@app.command
+def readme_c(readme: Path, out: Path) -> None:
+    """Write the C examples of README to --out."""
+    out.write_text(c_examples(readme.read_text(encoding="utf-8")), encoding="utf-8")
 
 
 @app.command
