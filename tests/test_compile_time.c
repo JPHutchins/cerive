@@ -32,5 +32,5 @@ __attribute__((used)) static void sanity(void) {
 	(void) CompileCheck_cmp(&x, &y);
 	(void) CompileCheck_hash(&x);
 	char buf[64];
-	(void) CompileCheck_debug(&x, buf, sizeof buf);
+	(void) CompileCheck_debug(&x, sizeof buf, buf);
 }

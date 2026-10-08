@@ -12,7 +12,7 @@
 #define CERIVE_P_union_member(variant) variant variant;
 #define CERIVE_P_union_debug_case(variant) \
 	case variant##_tag: \
-		return variant##_debug(&self->variant, buf, n);
+		return variant##_debug(&self->variant, n, buf);
 #define CERIVE_P_union_eq_case(variant) \
 	case variant##_tag: \
 		return variant##_eq(&a->variant, &b->variant);
@@ -30,7 +30,7 @@
 #ifdef CERIVE_NO_DEBUG
 #	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+	static inline int T##_debug(T const * const self, size_t const n, char buf[const n]) { \
 		(void) self; \
 		(void) buf; \
 		(void) n; \
@@ -39,7 +39,7 @@
 #else
 #	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+	static inline int T##_debug(T const * const self, size_t const n, char buf[const n]) { \
 		switch (self->tag) { \
 			CERIVE_P_union_over(CERIVE_P_union_debug_case, T) \
 		} \

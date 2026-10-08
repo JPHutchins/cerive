@@ -7,7 +7,7 @@ size_t cerive_buf_remaining(size_t const cap, int const off) {
 	return (off >= 0 && (size_t) off < cap) ? cap - (size_t) off : 0;
 }
 
-char * cerive_buf_at(char * const buf, size_t const cap, int const off) {
+char * cerive_buf_at(size_t const cap, char buf[const cap], int const off) {
 	return buf + ((off >= 0 && (size_t) off < cap) ? (size_t) off : cap);
 }
 

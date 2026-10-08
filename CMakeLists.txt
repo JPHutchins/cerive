@@ -78,6 +78,10 @@ set_tests_properties(scalars PROPERTIES TIMEOUT 30)
 add_library(test_compile_time OBJECT tests/test_compile_time.c)
 target_link_libraries(test_compile_time PRIVATE cerive)
 target_include_directories(test_compile_time PRIVATE variants/cerive)
+add_library(test_compile_time_no_debug OBJECT tests/test_compile_time.c)
+target_link_libraries(test_compile_time_no_debug PRIVATE cerive)
+target_include_directories(test_compile_time_no_debug PRIVATE variants/cerive)
+target_compile_definitions(test_compile_time_no_debug PRIVATE CERIVE_NO_DEBUG)
 
 set(README_EXAMPLES ${CMAKE_BINARY_DIR}/readme_examples.c)
 add_custom_command(OUTPUT ${README_EXAMPLES}

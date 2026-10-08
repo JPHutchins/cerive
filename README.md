@@ -37,7 +37,7 @@ static int32_t right_edge(Shape const shape) {
 int main(void) {
 	Line const line = CERIVE_NEW(Line, .a = {1, 2}, .b = {3, 4});
 	char text[64];
-	Line_debug(&line, text, sizeof text);
+	Line_debug(&line, sizeof text, text);
 	return !(
 		Line_eq(&line, &(Line){.a = Point_new(1, 2), .b = Point_new(3, 4)})
 		&& Point_cmp(&line.a, &line.b) == cerive_less

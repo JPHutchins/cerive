@@ -4,8 +4,8 @@
 
 #include "shapes.h"
 
-int study_point_debug(Point const * const s, char * const b, size_t const n) {
-	return Point_debug(s, b, n);
+int study_point_debug(Point const * const s, size_t const n, char b[const n]) {
+	return Point_debug(s, n, b);
 }
 Point study_point_new(int32_t const x, int32_t const y) {
 	return Point_new(x, y);
@@ -26,8 +26,8 @@ size_t study_point_hash(Point const * const s) {
 	return Point_hash(s);
 }
 
-int study_frame_debug(Frame const * const s, char * const b, size_t const n) {
-	return Frame_debug(s, b, n);
+int study_frame_debug(Frame const * const s, size_t const n, char b[const n]) {
+	return Frame_debug(s, n, b);
 }
 Frame study_frame_new(Line const e, int32_t const id) {
 	return Frame_new(e, id);
@@ -48,8 +48,8 @@ size_t study_frame_hash(Frame const * const s) {
 	return Frame_hash(s);
 }
 
-int study_span_debug(Span const * const s, char * const b, size_t const n) {
-	return Span_debug(s, b, n);
+int study_span_debug(Span const * const s, size_t const n, char b[const n]) {
+	return Span_debug(s, n, b);
 }
 Span study_span_new(Point * const first, Point * * const rows, int32_t const len) {
 	return Span_new(first, rows, len);
@@ -64,8 +64,8 @@ size_t study_span_hash(Span const * const s) {
 	return Span_hash(s);
 }
 
-int study_boxed_debug(Boxed const * const s, char * const b, size_t const n) {
-	return Boxed_debug(s, b, n);
+int study_boxed_debug(Boxed const * const s, size_t const n, char b[const n]) {
+	return Boxed_debug(s, n, b);
 }
 Boxed study_boxed_new(Point const origin, int32_t const seq) {
 	return Boxed_new(origin, seq);
@@ -80,8 +80,8 @@ size_t study_boxed_hash(Boxed const * const s) {
 	return Boxed_hash(s);
 }
 
-int study_shape_debug(Shape const * const s, char * const b, size_t const n) {
-	return Shape_debug(s, b, n);
+int study_shape_debug(Shape const * const s, size_t const n, char b[const n]) {
+	return Shape_debug(s, n, b);
 }
 bool study_shape_eq(Shape const * const a, Shape const * const b) {
 	return Shape_eq(a, b);

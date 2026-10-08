@@ -30,7 +30,7 @@ static int flat_struct(void) {
 	CHECK(!Point_eq(&p, &(Point){.x = 3, .y = 5}));
 
 	char buf[32];
-	Point_debug(&p, buf, sizeof buf);
+	Point_debug(&p, sizeof buf, buf);
 	CHECK(strcmp(buf, "Point { x=3 y=4 }") == 0);
 
 	return fails;
@@ -76,10 +76,10 @@ static int pointer_fields(void) {
 	CHECK(zero.first == NULL && zero.rows == NULL && zero.len == 0);
 
 	char buf[64];
-	int const need = Span_debug(&s, buf, sizeof buf);
+	int const need = Span_debug(&s, sizeof buf, buf);
 	CHECK(need == (int) strlen(buf));
 	CHECK(strncmp(buf, "Span { first=", 13) == 0);
-	CHECK(Span_debug(&s, NULL, 0) == need);
+	CHECK(Span_debug(&s, 0, NULL) == need);
 
 	return fails;
 }
@@ -106,7 +106,7 @@ static int const_usage(void) {
 	CHECK(pf->id == 7);
 
 	char buf[128];
-	CHECK(Frame_debug(&f, buf, sizeof buf) > 0);
+	CHECK(Frame_debug(&f, sizeof buf, buf) > 0);
 	CHECK(Frame_eq(&f, &f));
 	CHECK(Frame_cmp(&f, &f) == cerive_equal);
 	CHECK(Frame_hash(&f) == Frame_hash(&f));
@@ -135,7 +135,7 @@ static int const_struct_member(void) {
 	CHECK(z.origin.x == 0 && z.seq == 0);
 
 	char buf[64];
-	Boxed_debug(&b, buf, sizeof buf);
+	Boxed_debug(&b, sizeof buf, buf);
 	CHECK(strcmp(buf, "Boxed { origin=Point { x=1 y=2 } seq=7 }") == 0);
 
 	return fails;
@@ -176,7 +176,7 @@ static int nested_composition(void) {
 	CHECK(zero.edge.a.x == 0 && zero.edge.b.y == 0 && zero.id == 0);
 
 	char buf[128];
-	Frame_debug(&f, buf, sizeof buf);
+	Frame_debug(&f, sizeof buf, buf);
 	CHECK(strcmp(buf, "Frame { edge=Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } } id=7 }") == 0);
 
 	return fails;
@@ -189,14 +189,14 @@ static int debug_buffer_contract(void) {
 	char const * const expect = "Point { x=42 y=7 }";
 	int const need = (int) strlen(expect);
 
-	CHECK(Point_debug(&p, NULL, 0) == need);
+	CHECK(Point_debug(&p, 0, NULL) == need);
 
 	char full[32];
-	CHECK(Point_debug(&p, full, sizeof full) == need);
+	CHECK(Point_debug(&p, sizeof full, full) == need);
 	CHECK(strcmp(full, expect) == 0);
 
 	char truncated[8];
-	CHECK(Point_debug(&p, truncated, sizeof truncated) == need);
+	CHECK(Point_debug(&p, sizeof truncated, truncated) == need);
 	CHECK(strlen(truncated) == sizeof truncated - 1);
 	CHECK(strncmp(truncated, expect, sizeof truncated - 1) == 0);
 
@@ -221,9 +221,9 @@ static int union_construct_and_compare(void) {
 	CHECK(!Shape_eq(&point, &frame));
 
 	char buf[128];
-	Shape_debug(&point, buf, sizeof buf);
+	Shape_debug(&point, sizeof buf, buf);
 	CHECK(strcmp(buf, "Point { x=1 y=2 }") == 0);
-	Shape_debug(&frame, buf, sizeof buf);
+	Shape_debug(&frame, sizeof buf, buf);
 	CHECK(strcmp(buf, "Frame { edge=Line { a=Point { x=1 y=2 } b=Point { x=3 y=4 } } id=7 }") == 0);
 
 	return fails;
@@ -281,7 +281,7 @@ static int triple_pointer(void) {
 	CHECK(TripleP_hash(&t) != TripleP_hash(&(TripleP){.ptr = pp, .seq = 0}));
 
 	char buf[64];
-	TripleP_debug(&t, buf, sizeof buf);
+	TripleP_debug(&t, sizeof buf, buf);
 	CHECK(strstr(buf, "TripleP { ptr=") == buf);
 
 	return fails;
@@ -357,7 +357,7 @@ static int nested_union(void) {
 	CHECK(!ShapeWrap_eq(&w, &(ShapeWrap){.inner = point, .extra = 99}));
 
 	char buf[128];
-	ShapeWrap_debug(&w, buf, sizeof buf);
+	ShapeWrap_debug(&w, sizeof buf, buf);
 	CHECK(strcmp(buf, "ShapeWrap { inner=Point { x=1 y=2 } extra=42 }") == 0);
 
 	return fails;
@@ -388,10 +388,10 @@ static int debug_exact_buffer(void) {
 	char const * const expect = "Triple { a=100 b=200 c=300 }";
 	int const need = (int) strlen(expect);
 
-	CHECK(Triple_debug(&t, NULL, 0) == need);
+	CHECK(Triple_debug(&t, 0, NULL) == need);
 
-	char exact[need + 1];
-	CHECK(Triple_debug(&t, exact, sizeof exact) == need);
+	char exact[64];
+	CHECK(Triple_debug(&t, need + 1, exact) == need);
 	CHECK(strcmp(exact, expect) == 0);
 	CHECK(exact[need] == '\0');
 
@@ -444,9 +444,9 @@ static int nested_union_variant(void) {
 	CHECK(c.NodeC.id == 5);
 
 	char buf[128];
-	Outer_debug(&o, buf, sizeof buf);
+	Outer_debug(&o, sizeof buf, buf);
 	CHECK(strcmp(buf, "NodeA { x=3 y=4 }") == 0);
-	Outer_debug(&c, buf, sizeof buf);
+	Outer_debug(&c, sizeof buf, buf);
 	CHECK(strcmp(buf, "NodeC { id=5 }") == 0);
 
 	return fails;

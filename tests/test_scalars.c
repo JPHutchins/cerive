@@ -125,7 +125,7 @@ static int scalar_bool(void) {
 	CHECK(ScalarBool_hash(&s) != ScalarBool_hash(&(ScalarBool){.val = false, .id = 42}));
 
 	char buf[64];
-	ScalarBool_debug(&s, buf, sizeof buf);
+	ScalarBool_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarBool {") == buf);
 
 	ScalarBool const z = ScalarBool_default();
@@ -150,7 +150,7 @@ static int scalar_char(void) {
 	CHECK(ScalarChar_hash(&s) != ScalarChar_hash(&(ScalarChar){.val = 'B', .id = 42}));
 
 	char buf[64];
-	ScalarChar_debug(&s, buf, sizeof buf);
+	ScalarChar_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarChar {") == buf);
 
 	return fails;
@@ -172,7 +172,7 @@ static int scalar_i8(void) {
 	CHECK(ScalarI8_hash(&s) != ScalarI8_hash(&(ScalarI8){.val = -12, .id = 2}));
 
 	char buf[64];
-	ScalarI8_debug(&s, buf, sizeof buf);
+	ScalarI8_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarI8 {") == buf);
 
 	return fails;
@@ -194,7 +194,7 @@ static int scalar_i16(void) {
 	CHECK(ScalarI16_hash(&s) != ScalarI16_hash(&(ScalarI16){.val = 0, .id = 2}));
 
 	char buf[64];
-	ScalarI16_debug(&s, buf, sizeof buf);
+	ScalarI16_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarI16 {") == buf);
 
 	return fails;
@@ -216,7 +216,7 @@ static int scalar_i32(void) {
 	CHECK(ScalarI32_hash(&s) != ScalarI32_hash(&(ScalarI32){.val = -123456, .id = 0}));
 
 	char buf[64];
-	ScalarI32_debug(&s, buf, sizeof buf);
+	ScalarI32_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarI32 {") == buf);
 
 	return fails;
@@ -238,7 +238,7 @@ static int scalar_i64(void) {
 	CHECK(ScalarI64_hash(&s) != ScalarI64_hash(&(ScalarI64){.val = 0, .id = 4}));
 
 	char buf[64];
-	ScalarI64_debug(&s, buf, sizeof buf);
+	ScalarI64_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarI64 {") == buf);
 
 	return fails;
@@ -260,7 +260,7 @@ static int scalar_u8(void) {
 	CHECK(ScalarU8_hash(&s) != ScalarU8_hash(&(ScalarU8){.val = 100, .id = 5}));
 
 	char buf[64];
-	ScalarU8_debug(&s, buf, sizeof buf);
+	ScalarU8_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarU8 {") == buf);
 
 	return fails;
@@ -282,7 +282,7 @@ static int scalar_u16(void) {
 	CHECK(ScalarU16_hash(&s) != ScalarU16_hash(&(ScalarU16){.val = 1, .id = 6}));
 
 	char buf[64];
-	ScalarU16_debug(&s, buf, sizeof buf);
+	ScalarU16_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarU16 {") == buf);
 
 	return fails;
@@ -303,7 +303,7 @@ static int scalar_u32(void) {
 	CHECK(ScalarU32_hash(&s) != ScalarU32_hash(&(ScalarU32){.val = 0U, .id = 7}));
 
 	char buf[64];
-	ScalarU32_debug(&s, buf, sizeof buf);
+	ScalarU32_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarU32 {") == buf);
 
 	return fails;
@@ -324,7 +324,7 @@ static int scalar_u64(void) {
 	CHECK(ScalarU64_hash(&s) != ScalarU64_hash(&(ScalarU64){.val = 0ULL, .id = 8}));
 
 	char buf[64];
-	ScalarU64_debug(&s, buf, sizeof buf);
+	ScalarU64_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarU64 {") == buf);
 
 	return fails;
@@ -346,7 +346,7 @@ static int scalar_size(void) {
 	CHECK(ScalarSize_hash(&s) != ScalarSize_hash(&(ScalarSize){.val = 0, .id = 9}));
 
 	char buf[64];
-	ScalarSize_debug(&s, buf, sizeof buf);
+	ScalarSize_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarSize {") == buf);
 
 	return fails;
@@ -368,7 +368,7 @@ static int scalar_float(void) {
 	CHECK(ScalarFloat_hash(&s) != ScalarFloat_hash(&(ScalarFloat){.val = 0.0f, .id = 10}));
 
 	char buf[64];
-	ScalarFloat_debug(&s, buf, sizeof buf);
+	ScalarFloat_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarFloat {") == buf);
 
 	return fails;
@@ -390,7 +390,7 @@ static int scalar_double(void) {
 	CHECK(ScalarDouble_hash(&s) != ScalarDouble_hash(&(ScalarDouble){.val = 0.0, .id = 11}));
 
 	char buf[64];
-	ScalarDouble_debug(&s, buf, sizeof buf);
+	ScalarDouble_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarDouble {") == buf);
 
 	return fails;
@@ -412,7 +412,7 @@ static int scalar_int(void) {
 	CHECK(ScalarInt_hash(&s) != ScalarInt_hash(&(ScalarInt){.val = 0, .id = 12}));
 
 	char buf[64];
-	ScalarInt_debug(&s, buf, sizeof buf);
+	ScalarInt_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarInt {") == buf);
 
 	return fails;
@@ -434,7 +434,7 @@ static int scalar_unsigned(void) {
 	CHECK(ScalarUnsigned_hash(&s) != ScalarUnsigned_hash(&(ScalarUnsigned){.val = 0u, .id = 13}));
 
 	char buf[64];
-	ScalarUnsigned_debug(&s, buf, sizeof buf);
+	ScalarUnsigned_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarUnsigned {") == buf);
 
 	return fails;
@@ -456,7 +456,7 @@ static int scalar_long(void) {
 	CHECK(ScalarLong_hash(&s) != ScalarLong_hash(&(ScalarLong){.val = 0L, .id = 14}));
 
 	char buf[64];
-	ScalarLong_debug(&s, buf, sizeof buf);
+	ScalarLong_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarLong {") == buf);
 
 	return fails;
@@ -478,7 +478,7 @@ static int scalar_ulong(void) {
 	CHECK(ScalarULong_hash(&s) != ScalarULong_hash(&(ScalarULong){.val = 0UL, .id = 15}));
 
 	char buf[64];
-	ScalarULong_debug(&s, buf, sizeof buf);
+	ScalarULong_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarULong {") == buf);
 
 	return fails;
@@ -500,7 +500,7 @@ static int scalar_llong(void) {
 	CHECK(ScalarLLong_hash(&s) != ScalarLLong_hash(&(ScalarLLong){.val = 1LL, .id = 16}));
 
 	char buf[64];
-	ScalarLLong_debug(&s, buf, sizeof buf);
+	ScalarLLong_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarLLong {") == buf);
 
 	return fails;
@@ -522,7 +522,7 @@ static int scalar_ullong(void) {
 	CHECK(ScalarULLong_hash(&s) != ScalarULLong_hash(&(ScalarULLong){.val = 0ULL, .id = 17}));
 
 	char buf[64];
-	ScalarULLong_debug(&s, buf, sizeof buf);
+	ScalarULLong_debug(&s, sizeof buf, buf);
 	CHECK(strstr(buf, "ScalarULLong {") == buf);
 
 	return fails;
@@ -554,7 +554,7 @@ static int empty_struct(void) {
 	CHECK(Empty_eq(&e, &e2));
 
 	char buf[32];
-	Empty_debug(&e, buf, sizeof buf);
+	Empty_debug(&e, sizeof buf, buf);
 	CHECK(strstr(buf, "Empty {") == buf);
 
 	CHECK(Empty_cmp(&e, &e) == cerive_equal);
