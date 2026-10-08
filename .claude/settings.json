@@ -5,7 +5,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx 'camas[mcp]==0.1.22' mcp fix"
+            "command": "uvx 'camas[mcp]==0.1.29' mcp fix || exit 0"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx 'camas[mcp]==0.1.29' mcp fix || exit 0"
+          },
+          {
+            "type": "command",
+            "command": "uvx 'camas[mcp]==0.1.29' mcp gate --under 5s --nudge",
+            "async": true,
+            "asyncRewake": true
           }
         ]
       }

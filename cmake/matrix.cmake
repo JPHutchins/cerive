@@ -1,5 +1,6 @@
 set(MATRIX_OPTS "O0;O1;O2;O3;Os;Oz" CACHE STRING "Optimization levels to sweep")
-set(MATRIX_CPUS "cortex-m3" CACHE STRING "Cortex-M cores to sweep (compile-only)")
+set(MATRIX_CPUS "cortex-m0plus;cortex-m3;cortex-m4;cortex-m7;cortex-m33" CACHE STRING
+	"Cortex-M cores to sweep (compile-only)")
 set(MATRIX_DIR ${CMAKE_BINARY_DIR}/matrix CACHE INTERNAL "")
 
 file(MAKE_DIRECTORY ${MATRIX_DIR})

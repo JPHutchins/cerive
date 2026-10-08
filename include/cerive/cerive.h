@@ -38,20 +38,6 @@
 #define CERIVE_VERSION_MINOR 1
 #define CERIVE_VERSION_PATCH 0
 
-#ifdef CERIVE_NO_ASSERT
-#	define CERIVE_P_assert(ptr) ((void) 0)
-#else
-#	define CERIVE_P_assert(ptr) \
-	do { \
-		_Pragma("GCC diagnostic push") \
-		_Pragma("GCC diagnostic ignored \"-Wnonnull-compare\"") \
-		if ((uintptr_t)(ptr) == 0) { \
-			__builtin_trap(); \
-		} \
-		_Pragma("GCC diagnostic pop") \
-	} while (0)
-#endif
-
 #define CERIVE_P_drop_first(...) CERIVE_P_drop_first_(__VA_ARGS__)
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__
 
@@ -87,9 +73,10 @@
 #define CERIVE_P_eq_pointer(star, type, name) &&a->name == b->name
 #define CERIVE_PartialEq(T) \
 	__attribute__((nonnull(1, 2))) \
-	static inline bool T##_eq(T const * const a, T const * const b) { \
-		CERIVE_P_assert(a); \
-		CERIVE_P_assert(b); \
+	static inline bool T##_eq( \
+		[[maybe_unused]] T const * const a, \
+		[[maybe_unused]] T const * const b \
+	) { \
 		return true T##_FIELDS(CERIVE_P_eq); \
 	}
 
@@ -119,9 +106,10 @@
 	}
 #define CERIVE_Ord(T) \
 	__attribute__((nonnull(1, 2))) \
-	static inline enum cerive_ordering T##_cmp(T const * const a, T const * const b) { \
-		CERIVE_P_assert(a); \
-		CERIVE_P_assert(b); \
+	static inline enum cerive_ordering T##_cmp( \
+		[[maybe_unused]] T const * const a, \
+		[[maybe_unused]] T const * const b \
+	) { \
 		T##_FIELDS(CERIVE_P_ord) \
 		return cerive_equal; \
 	}
@@ -133,8 +121,7 @@
 #define CERIVE_P_hash_pointer(star, type, name) hash = cerive_hash_bytes(hash, &self->name, sizeof self->name);
 #define CERIVE_Hash(T) \
 	__attribute__((nonnull(1))) \
-	static inline size_t T##_hash(T const * const self) { \
-		CERIVE_P_assert(self); \
+	static inline size_t T##_hash([[maybe_unused]] T const * const self) { \
 		size_t hash = cerive_hash_offset; \
 		T##_FIELDS(CERIVE_P_hash) \
 		return hash; \
@@ -173,8 +160,11 @@
 /* Total debug output must fit in INT_MAX. */
 #	define CERIVE_Debug(T) \
 	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
-		CERIVE_P_assert(self); \
+	static inline int T##_debug( \
+		[[maybe_unused]] T const * const self, \
+		char * const buf, \
+		size_t const n \
+	) { \
 		int off = 0; \
 		off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), #T " { "); \
 		T##_FIELDS(CERIVE_P_debug) \

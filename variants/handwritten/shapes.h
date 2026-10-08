@@ -247,13 +247,19 @@ __attribute__((nonnull(1, 2))) static inline enum cerive_ordering Span_cmp(
 	Span const * const b
 ) {
 	{
-		enum cerive_ordering const o = (a->first > b->first) - (a->first < b->first);
+		enum cerive_ordering const o = (
+			((uintptr_t)(a->first) > (uintptr_t)(b->first)) -
+			((uintptr_t)(a->first) < (uintptr_t)(b->first))
+		);
 		if (o != cerive_equal) {
 			return o;
 		}
 	}
 	{
-		enum cerive_ordering const o = (a->rows > b->rows) - (a->rows < b->rows);
+		enum cerive_ordering const o = (
+			((uintptr_t)(a->rows) > (uintptr_t)(b->rows)) -
+			((uintptr_t)(a->rows) < (uintptr_t)(b->rows))
+		);
 		if (o != cerive_equal) {
 			return o;
 		}

@@ -1,14 +1,20 @@
 """camas task definitions."""
 
-from camas import Claude, Config, Parallel, Sequential, Task
+from camas import Claude, Config, Parallel, Sequential, Task, by_suffix
 
-lint = Task("uv run ruff check {paths}", paths=".")
-format_check = Task("uv run ruff format --check {paths}", paths=".")
-mypy = Task("uv run mypy {paths}", paths=".")
-pyright = Task("uv run pyright {paths}", paths=".")
-test = Task("uv run pytest -v")
-lint_fix = Task("uv run ruff check --fix {paths}", paths=".", mutates=True)
-format_fix = Task("uv run ruff format {paths}", paths=".", mutates=True)
+python_sources = by_suffix((".py",))
+
+lint = Task(
+    "uv run ruff check {paths}",
+    paths=python_sources,
+    agent_format=("--output-format sarif", "sarif"),
+)
+format_check = Task("uv run ruff format --check {paths}", paths=python_sources)
+mypy = Task("uv run mypy {paths}", paths=python_sources)
+pyright = Task("uv run pyright {paths}", paths=python_sources)
+test = Task("uv run pytest -v", agent_format=("--junitxml {report}", "junit"))
+lint_fix = Task("uv run ruff check --fix {paths}", paths=python_sources, mutates=True)
+format_fix = Task("uv run ruff format {paths}", paths=python_sources, mutates=True)
 
 check = Parallel(lint, format_check, mypy, pyright, test)
 fix = Sequential(lint_fix, format_fix)

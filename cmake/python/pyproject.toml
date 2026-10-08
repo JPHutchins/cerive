@@ -19,7 +19,7 @@ dev = [
 "pyright>=1.1.408",
 "pytest>=8",
 "ruff>=0.12",
-"camas==0.1.25",
+"camas==0.1.29",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -120,6 +120,8 @@ convention = "google"
 "tests/**" = [
 "D",
 "INP001",
+"TC002",
+"TC003",
 ] # tests document themselves by name; not an installed package
 "src/cstructs/cli.py" = [
 "TC003",
