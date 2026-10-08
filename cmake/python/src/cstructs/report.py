@@ -1,7 +1,7 @@
 """Evidence report rendering."""
 
 import re
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, assert_never
 
 from cstructs.asm import diff_lines, instr_count
 
@@ -16,6 +16,21 @@ class Key(NamedTuple):
     cpu: str
     opt: str
     fn: str
+
+
+class Stem(NamedTuple):
+    """A matrix artifact stem.
+
+    >>> str(Stem("cerive", "cortex-m3", "O0"))
+    'cerive.cortex-m3.O0'
+    """
+
+    impl: str
+    cpu: str
+    opt: str
+
+    def __str__(self) -> str:
+        return f"{self.impl}.{self.cpu}.{self.opt}"
 
 
 class SizeInfo(NamedTuple):
@@ -74,6 +89,66 @@ class Report(NamedTuple):
     failures: tuple[str, ...]
 
 
+class Absent(NamedTuple):
+    """A cell judgement."""
+
+
+class Missing(NamedTuple):
+    """A cell judgement."""
+
+
+class Identical(NamedTuple):
+    """A cell judgement."""
+
+
+class Divergent(NamedTuple):
+    """A cell judgement."""
+
+    mark: str
+    rival: bool
+    off_baseline: bool
+    diff: str
+
+
+type Judgement = Absent | Missing | Identical | Divergent
+
+
+def _mark(judgement: Judgement) -> str:
+    match judgement:
+        case Absent():
+            return ""
+        case Missing():
+            return "∅"
+        case Identical():
+            return "="
+        case Divergent(mark=mark):
+            return mark
+        case _:
+            assert_never(judgement)
+
+
+def _off_baseline(judgement: Judgement) -> bool:
+    match judgement:
+        case Absent() | Identical():
+            return False
+        case Missing():
+            return True
+        case Divergent(off_baseline=off_baseline):
+            return off_baseline
+        case _:
+            assert_never(judgement)
+
+
+def _rival(judgement: Judgement) -> bool:
+    match judgement:
+        case Absent() | Missing() | Identical():
+            return False
+        case Divergent(rival=rival):
+            return rival
+        case _:
+            assert_never(judgement)
+
+
 def _labels(cells: Sequence[Cell]) -> tuple[str, ...]:
     """Unique cell labels.
 
@@ -81,6 +156,72 @@ def _labels(cells: Sequence[Cell]) -> tuple[str, ...]:
     ('f@m3/O0', 'g@m3/O0')
     """
     return tuple(dict.fromkeys(f"{fn}@{cpu}/{opt}" for fn, cpu, opt in cells))
+
+
+def _diff_block(cell: Cell, x: str, y: str, cx: str, cy: str) -> str:
+    d = diff_lines(cx, cy, x, y)
+    return (
+        f"<details><summary>{cell.fn} @ {cell.cpu}/{cell.opt} — {x} vs {y} "
+        f"(Δinsn {instr_count(cx) - instr_count(cy):+d})</summary>\n\n```diff\n{d}\n```\n</details>"
+        if d
+        else ""
+    )
+
+
+def _judge(
+    cell: Cell,
+    variants: Sequence[str],
+    baseline: str,
+    candidates: Sequence[str],
+    canon: Mapping[Key, str],
+    sizes: Mapping[Key, int],
+) -> Judgement:
+    """Judge one cell.
+
+    >>> v = ["cerive", "handwritten"]
+    >>> _judge(Cell("f", "m3", "O0"), v, "handwritten", ["cerive"], {}, {})
+    Absent()
+    >>> _judge(
+    ...     Cell("f", "m3", "O0"),
+    ...     v,
+    ...     "handwritten",
+    ...     ["cerive"],
+    ...     {Key("cerive", "m3", "O0", "f"): "nop"},
+    ...     {},
+    ... )
+    Missing()
+    """
+    bodies = {
+        v: canon[Key(v, cell.cpu, cell.opt, cell.fn)]
+        for v in variants
+        if Key(v, cell.cpu, cell.opt, cell.fn) in canon
+    }
+    if not bodies:
+        return Absent()
+    if any(Key(v, cell.cpu, cell.opt, cell.fn) not in canon for v in variants):
+        return Missing()
+    if len(set(bodies.values())) == 1:
+        return Identical()
+    rival = len({bodies[v] for v in candidates}) > 1
+    candidate_size = sizes.get(Key(candidates[0], cell.cpu, cell.opt, cell.fn))
+    baseline_size = sizes.get(Key(baseline, cell.cpu, cell.opt, cell.fn))
+    x, y = (
+        (candidates[0], candidates[1])
+        if rival and len(candidates) >= 2
+        else (candidates[0], baseline)
+    )
+    return Divergent(
+        mark="⚠"
+        if rival
+        else (
+            f"{candidate_size - baseline_size:+d}"
+            if candidate_size is not None and baseline_size is not None
+            else "≠"
+        ),
+        rival=rival,
+        off_baseline=any(bodies[v] != bodies[baseline] for v in candidates),
+        diff=_diff_block(cell, x, y, bodies[x], bodies[y]),
+    )
 
 
 def _overview(
@@ -108,13 +249,50 @@ def _overview(
     ]
 
 
+def _section(
+    cpu: str,
+    variants: Sequence[str],
+    opts: Sequence[str],
+    fns: Sequence[str],
+    baseline: str,
+    judgements: Mapping[Cell, Judgement],
+    totals: Mapping[Stem, int],
+    diverged: bool,
+) -> list[str]:
+    return [
+        f"<details{' open' if diverged else ''}><summary><b>{cpu}</b></summary>",
+        "",
+        "`text` bytes, whole TU:",
+        "",
+        "| impl | " + " | ".join(opts) + " |",
+        "|---|" + "---|" * len(opts),
+        *(
+            f"| {v} | " + " | ".join(str(totals.get(Stem(v, cpu, o), "-")) for o in opts) + " |"
+            for v in variants
+        ),
+        "",
+        f"per function: `=` identical asm across impls · `+N` Δbytes vs {baseline} · `⚠` candidates disagree · `∅` missing from some impl",
+        "",
+        "| fn | " + " | ".join(opts) + " |",
+        "|---|" + "---|" * len(opts),
+        *(
+            f"| {fn} | " + " | ".join(_mark(judgements[Cell(fn, cpu, o)]) for o in opts) + " |"
+            for fn in fns
+            if any(not isinstance(judgements[Cell(fn, cpu, o)], Absent) for o in opts)
+        ),
+        "",
+        "</details>",
+        "",
+    ]
+
+
 def render_report(
     variants: Sequence[str],
     cpus: Sequence[str],
     opts: Sequence[str],
     canon: Mapping[Key, str],
     sizes: Mapping[Key, int],
-    totals: Mapping[tuple[str, str, str], int],
+    totals: Mapping[Stem, int],
     evidence_gaps: Sequence[Gap] = (),
 ) -> Report:
     """Render the evidence report."""
@@ -124,84 +302,13 @@ def render_report(
         {k.fn for k in canon if not _is_helper(k.fn)},
         key=lambda s: (not s.startswith("study_"), s),
     )
-
-    diffs: list[str] = []
-    strat_breaks: list[Cell] = []
-    base_mismatches: list[Cell] = []
-    body: list[str] = []
-
-    for cpu in cpus:
-        grid: list[str] = []
-        for fn in fns:
-            cells: list[str] = []
-            present = False
-            for opt in opts:
-                got = {v: canon.get(Key(v, cpu, opt, fn)) for v in variants}
-                have = [v for v in variants if got[v] is not None]
-                if not have:
-                    cells.append("")
-                    continue
-                present = True
-                if len(have) < len(variants):
-                    base_mismatches.append(Cell(fn, cpu, opt))
-                    cells.append("∅")
-                    continue
-                if len({got[v] for v in have}) == 1:
-                    cells.append("=")
-                    continue
-                cand_here = [v for v in candidates if got[v] is not None]
-                strat_diff = len({got[v] for v in cand_here}) > 1
-                if strat_diff:
-                    strat_breaks.append(Cell(fn, cpu, opt))
-                    cells.append("⚠")
-                else:
-                    sz_a = sizes.get(Key(candidates[0], cpu, opt, fn)) if candidates else None
-                    sz_b = sizes.get(Key(baseline, cpu, opt, fn))
-                    delta = f"{sz_a - sz_b:+d}" if sz_a is not None and sz_b is not None else "≠"
-                    cells.append(delta)
-                baseline_got = got.get(baseline)
-                if baseline_got is not None and any(
-                    got[v] is not None and got[v] != baseline_got for v in cand_here
-                ):
-                    base_mismatches.append(Cell(fn, cpu, opt))
-                x, y = (
-                    (cand_here[0], cand_here[1])
-                    if strat_diff and len(cand_here) >= 2
-                    else (candidates[0], baseline)
-                )
-                cx, cy = canon.get(Key(x, cpu, opt, fn)), canon.get(Key(y, cpu, opt, fn))
-                if cx is not None and cy is not None:
-                    d = diff_lines(cx, cy, x, y)
-                    if d:
-                        diffs.append(
-                            f"<details><summary>{fn} @ {cpu}/{opt} — {x} vs {y} "
-                            f"(Δinsn {instr_count(cx) - instr_count(cy):+d})</summary>\n\n```diff\n{d}\n```\n</details>"
-                        )
-            if present:
-                grid.append(f"| {fn} | " + " | ".join(cells) + " |")
-        diverged_here = any(c == cpu for _, c, _ in (*strat_breaks, *base_mismatches))
-        body += [
-            f"<details{' open' if diverged_here else ''}><summary><b>{cpu}</b></summary>",
-            "",
-            "`text` bytes, whole TU:",
-            "",
-            "| impl | " + " | ".join(opts) + " |",
-            "|---|" + "---|" * len(opts),
-            *(
-                f"| {v} | " + " | ".join(str(totals.get((v, cpu, o), "-")) for o in opts) + " |"
-                for v in variants
-            ),
-            "",
-            f"per function: `=` identical asm across impls · `+N` Δbytes vs {baseline} · `⚠` candidates disagree · `∅` missing from some impl",
-            "",
-            "| fn | " + " | ".join(opts) + " |",
-            "|---|" + "---|" * len(opts),
-            *grid,
-            "",
-            "</details>",
-            "",
-        ]
-
+    judgements = {
+        cell: _judge(cell, variants, baseline, candidates, canon, sizes)
+        for cell in (Cell(fn, cpu, opt) for cpu in cpus for fn in fns for opt in opts)
+    }
+    strat_breaks = [cell for cell, j in judgements.items() if _rival(j)]
+    base_mismatches = [cell for cell, j in judgements.items() if _off_baseline(j)]
+    diffs = [j.diff for j in judgements.values() if isinstance(j, Divergent) and j.diff]
     incomplete = (
         *(() if candidates else ("no candidate impl to compare",)),
         *(() if fns else ("no functions compared",)),
@@ -214,10 +321,14 @@ def render_report(
         return "❌ evidence incomplete" if incomplete else "✅ identical everywhere"
 
     cand_label = " ≡ ".join(candidates) if candidates else "(none)"
-    head = ["# Evidence — codegen comparison", ""]
-    if len(candidates) >= 2:
-        head += [f"**{cand_label}:** " + verdict(strat_breaks, "❌"), ""]
-    head += [
+    head = [
+        "# Evidence — codegen comparison",
+        "",
+        *(
+            [f"**{cand_label}:** " + verdict(strat_breaks, "❌"), ""]
+            if len(candidates) >= 2
+            else []
+        ),
         f"**{cand_label} ≡ {baseline}:** " + verdict(base_mismatches, "❌"),
         "",
         *(["**evidence incomplete:** " + "; ".join(incomplete), ""] if incomplete else []),
@@ -229,8 +340,23 @@ def render_report(
             evidence_gaps,
         ),
     ]
-    if diffs:
-        body += ["## diffs", "", *diffs]
+    body = [
+        *(
+            line
+            for cpu in cpus
+            for line in _section(
+                cpu,
+                variants,
+                opts,
+                fns,
+                baseline,
+                judgements,
+                totals,
+                any(c.cpu == cpu for c in (*strat_breaks, *base_mismatches)),
+            )
+        ),
+        *(["## diffs", "", *diffs] if diffs else []),
+    ]
     return Report(
         "\n".join(head + body), (*_labels([*strat_breaks, *base_mismatches]), *incomplete)
     )

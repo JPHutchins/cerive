@@ -2,19 +2,20 @@
 
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NamedTuple
 
 from cyclopts import App, Parameter
 
 from cstructs.asm import canonical, parse_syms, split_functions
 from cstructs.expand import strip_system_headers
 from cstructs.readme import c_examples
-from cstructs.report import Gap, Key, parse_size, render_report
+from cstructs.report import Gap, Key, Stem, parse_size, render_report
 
 app = App(name="cstructs", help="cerive build tooling.")
 
-Tokens = Annotated[list[str], Parameter(consume_multiple=True)]
+type Tokens = Annotated[list[str], Parameter(consume_multiple=True)]
 
 
 @app.command
@@ -37,6 +38,59 @@ def _read(path: Path) -> str | None:
         return None
 
 
+class Evidence(NamedTuple):
+    """One artifact stem's evidence."""
+
+    stem: Stem
+    bodies: Mapping[str, str]
+    syms: Mapping[str, int]
+    text: int | None
+    gaps: tuple[Gap, ...]
+
+
+def _evidence(
+    stem: Stem, s_text: str | None, sym_text: str | None, size_text: str | None
+) -> Evidence:
+    r"""Parse one artifact stem.
+
+    >>> [g.reason for g in _evidence(Stem("cerive", "m3", "O0"), None, "", "junk").gaps]
+    ['unusable artifact cerive.m3.O0.s', 'unusable artifact cerive.m3.O0.sym', 'unusable artifact cerive.m3.O0.size']
+    >>> _evidence(
+    ...     Stem("cerive", "m3", "O0"),
+    ...     "\t.type f, %function\nf:\n\tnop\n\t.size f, .-f\n",
+    ...     "00000000 00000002 T g\n",
+    ...     " 2 0 0 2 2 x.o\n",
+    ... ).gaps[0].reason
+    'cerive.m3.O0.s and cerive.m3.O0.sym define different functions'
+    """
+    bodies = {fn: canonical(raw) for fn, raw in split_functions(s_text or "").items()}
+    syms = parse_syms(sym_text or "")
+    size = parse_size(size_text or "")
+    s_usable = bool(bodies) and all(bodies.values())
+    return Evidence(
+        stem=stem,
+        bodies=bodies if s_usable else {},
+        syms=syms,
+        text=size.text if size is not None else None,
+        gaps=(
+            *(
+                Gap(stem.cpu, stem.opt, f"unusable artifact {stem}.{ext}")
+                for ext, usable in (
+                    ("s", s_usable),
+                    ("sym", bool(syms)),
+                    ("size", size is not None),
+                )
+                if not usable
+            ),
+            *(
+                (Gap(stem.cpu, stem.opt, f"{stem}.s and {stem}.sym define different functions"),)
+                if bodies and syms and set(bodies) != set(syms)
+                else ()
+            ),
+        ),
+    )
+
+
 @app.command
 def report(
     matrix_dir: Path,
@@ -46,43 +100,24 @@ def report(
     summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
 ) -> int:
     """Render, publish and gate on the evidence report."""
-    evidence_gaps: list[Gap] = []
-    canon: dict[Key, str] = {}
-    sizes: dict[Key, int] = {}
-    totals: dict[tuple[str, str, str], int] = {}
-    for v in variants:
-        for c in cpus:
-            for o in opts:
-                stem = f"{v}.{c}.{o}"
-                s_text, sym_text, size_text = (
-                    _read(matrix_dir / f"{stem}.{ext}") for ext in ("s", "sym", "size")
-                )
-                bodies = {
-                    fn: canonical(raw)
-                    for fn, raw in (split_functions(s_text) if s_text is not None else {}).items()
-                }
-                syms = parse_syms(sym_text) if sym_text is not None else {}
-                info = parse_size(size_text) if size_text is not None else None
-                s_usable = bool(bodies) and all(bodies.values())
-                evidence_gaps += [
-                    Gap(c, o, f"unusable artifact {name}")
-                    for name, usable in (
-                        (f"{stem}.s", s_usable),
-                        (f"{stem}.sym", bool(syms)),
-                        (f"{stem}.size", info is not None),
-                    )
-                    if not usable
-                ]
-                if bodies and syms and set(bodies) != set(syms):
-                    evidence_gaps.append(
-                        Gap(c, o, f"{stem}.s and {stem}.sym define different functions")
-                    )
-                if s_usable:
-                    canon.update({Key(v, c, o, fn): body for fn, body in bodies.items()})
-                sizes.update({Key(v, c, o, fn): size for fn, size in syms.items()})
-                if info is not None:
-                    totals[(v, c, o)] = info.text
-    rendered = render_report(variants, cpus, opts, canon, sizes, totals, evidence_gaps)
+    evidence = [
+        _evidence(
+            stem,
+            _read(matrix_dir / f"{stem}.s"),
+            _read(matrix_dir / f"{stem}.sym"),
+            _read(matrix_dir / f"{stem}.size"),
+        )
+        for stem in (Stem(v, c, o) for v in variants for c in cpus for o in opts)
+    ]
+    rendered = render_report(
+        variants,
+        cpus,
+        opts,
+        {Key(*e.stem, fn): body for e in evidence for fn, body in e.bodies.items()},
+        {Key(*e.stem, fn): size for e in evidence for fn, size in e.syms.items()},
+        {e.stem: e.text for e in evidence if e.text is not None},
+        [gap for e in evidence for gap in e.gaps],
+    )
     matrix_dir.mkdir(parents=True, exist_ok=True)
     (matrix_dir / "report.md").write_text(rendered.markdown + "\n", encoding="utf-8")
     if summary is not None:

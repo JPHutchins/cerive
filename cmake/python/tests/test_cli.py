@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from cstructs.cli import report
+from cstructs.cli import app, report
 
 VARIANTS = ["cerive", "handwritten"]
 
@@ -99,3 +99,27 @@ def test_report_publishes_into_a_missing_matrix_dir(tmp_path: Path) -> None:
     matrix = tmp_path / "never-built"
     assert report(matrix, VARIANTS, ["m3"], ["O0"]) == 1
     assert "❌ evidence incomplete" in (matrix / "report.md").read_text()
+
+
+def test_cli_binds_every_token_of_a_multi_value_option(tmp_path: Path) -> None:
+    for v in VARIANTS:
+        write_cell(tmp_path, v, "nop")
+    code = app(
+        [
+            "report",
+            "--matrix-dir",
+            str(tmp_path),
+            "--variants",
+            *VARIANTS,
+            "--cpus",
+            "m3",
+            "--opts",
+            "O0",
+        ],
+        result_action="return_value",
+        exit_on_error=False,
+    )
+    assert code == 0
+    assert (
+        "**cerive ≡ handwritten:** ✅ identical everywhere" in (tmp_path / "report.md").read_text()
+    )
