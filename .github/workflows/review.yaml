@@ -1,13 +1,8 @@
-# Code review — thin consumer of the code-review reusable workflow.
-# The full pipeline lives in the pinned ref; this repo keeps only the trigger, the superset
-# permissions, the MODEL_API_KEY secret, and .github/prices.json. Bump the @ref to upgrade.
-# See: https://github.com/JPHutchins/code-review
-
 name: Code review
 
 on:
   workflow_run:
-    workflows: ["ci"]       # our CI workflow name (lowercase) — unmodified
+    workflows: ["ci"]
     types: [completed]
 
 permissions:
@@ -15,7 +10,7 @@ permissions:
   actions: read
   pull-requests: write
   issues: write
-  checks: write            # create the review's check-run attribution surface (alpha.33 / #115)
+  checks: write
 
 jobs:
   review:
@@ -23,7 +18,7 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       (github.event.workflow_run.conclusion == 'success' ||
        github.event.workflow_run.conclusion == 'failure')
-    uses: JPHutchins/code-review/.github/workflows/review-reusable.yaml@v0.1.0-alpha.52
+    uses: JPHutchins/code-review/.github/workflows/review-reusable.yaml@v0.1.0-alpha.64
     with:
       head_sha:      ${{ github.event.workflow_run.head_sha }}
       head_branch:   ${{ github.event.workflow_run.head_branch }}
@@ -34,10 +29,10 @@ jobs:
       api_base_url:  ${{ vars.API_BASE_URL }}
       model_full:    deepseek-v4-pro[1m]
       model_mechanic: deepseek-v4-pro[1m]
-      subagent_model: deepseek-v4-flash[1m]   # finder fan-out runs on flash; the main agent adjudicates on model_full
-      # Allow the runner's own Actions control plane so harden-runner's egress block never severs the
-      # runner-to-service connection mid-review — GitHub kills a runner that loses it ("shutdown signal").
+      subagent_model: deepseek-flash[1m]
       extra_endpoints: "*.actions.githubusercontent.com:443"
-      # STATIC review (time limits + grace periods are the reusable workflow's defaults: 24m + 12m · 6m + 3m).
+      mechanic_time_limit: 6m
+      mechanic_grace_period: 3m
+      mechanic_usd_limit: "0.10"
     secrets:
       MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
