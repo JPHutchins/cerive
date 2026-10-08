@@ -17,25 +17,30 @@ typedef struct Point {
 } Point;
 __attribute__((nonnull(1))) static inline int Point_debug(
 	Point const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	int off = 0;
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "Point { ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "Point { ");
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"x=%" PRId32 " ",
 		self->x
 	);
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"y=%" PRId32 " ",
 		self->y
 	);
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}");
 	return off;
+}
+
+__attribute__((nonnull(1))) static inline int Point_debug_len(Point const * const self) {
+	char scratch[1];
+	return Point_debug(self, sizeof scratch, scratch);
 }
 static inline Point Point_new(int32_t const x, int32_t const y) {
 	return (Point){.x = x, .y = y};
@@ -80,19 +85,24 @@ typedef struct Line {
 } Line;
 __attribute__((nonnull(1))) static inline int Line_debug(
 	Line const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	int off = 0;
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "Line { ");
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "a=");
-	off += Point_debug(&self->a, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off));
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "b=");
-	off += Point_debug(&self->b, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off));
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "Line { ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "a=");
+	off += Point_debug(&self->a, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off));
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), " ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "b=");
+	off += Point_debug(&self->b, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off));
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), " ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}");
 	return off;
+}
+
+__attribute__((nonnull(1))) static inline int Line_debug_len(Line const * const self) {
+	char scratch[1];
+	return Line_debug(self, sizeof scratch, scratch);
 }
 static inline Line Line_new(Point const a, Point const b) {
 	return (Line){.a = a, .b = b};
@@ -137,22 +147,27 @@ typedef struct Frame {
 } Frame;
 __attribute__((nonnull(1))) static inline int Frame_debug(
 	Frame const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	int off = 0;
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "Frame { ");
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "edge=");
-	off += Line_debug(&self->edge, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off));
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "Frame { ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "edge=");
+	off += Line_debug(&self->edge, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off));
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), " ");
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"id=%" PRId32 " ",
 		self->id
 	);
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}");
 	return off;
+}
+
+__attribute__((nonnull(1))) static inline int Frame_debug_len(Frame const * const self) {
+	char scratch[1];
+	return Frame_debug(self, sizeof scratch, scratch);
 }
 static inline Frame Frame_new(Line const edge, int32_t const id) {
 	return (Frame){.edge = edge, .id = id};
@@ -198,31 +213,36 @@ typedef struct Span {
 } Span;
 __attribute__((nonnull(1))) static inline int Span_debug(
 	Span const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	int off = 0;
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "Span { ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "Span { ");
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"first=%p ",
 		(void *) self->first
 	);
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"rows=%p ",
 		(void *) self->rows
 	);
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"len=%" PRId32 " ",
 		self->len
 	);
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}");
 	return off;
+}
+
+__attribute__((nonnull(1))) static inline int Span_debug_len(Span const * const self) {
+	char scratch[1];
+	return Span_debug(self, sizeof scratch, scratch);
 }
 static inline Span Span_new(Point * const first, Point * * const rows, int32_t const len) {
 	return (Span){.first = first, .rows = rows, .len = len};
@@ -280,22 +300,27 @@ typedef struct Boxed {
 } Boxed;
 __attribute__((nonnull(1))) static inline int Boxed_debug(
 	Boxed const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	int off = 0;
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "Boxed { ");
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "origin=");
-	off += Point_debug(&self->origin, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off));
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "Boxed { ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "origin=");
+	off += Point_debug(&self->origin, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off));
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), " ");
 	off += snprintf(
-		cerive_buf_at(buf, n, off),
+		cerive_buf_at(n, buf, off),
 		cerive_buf_remaining(n, off),
 		"seq=%" PRId32 " ",
 		self->seq
 	);
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}");
 	return off;
+}
+
+__attribute__((nonnull(1))) static inline int Boxed_debug_len(Boxed const * const self) {
+	char scratch[1];
+	return Boxed_debug(self, sizeof scratch, scratch);
 }
 static inline Boxed Boxed_new(Point const origin, int32_t const seq) {
 	return (Boxed){.origin = origin, .seq = seq};
@@ -345,18 +370,23 @@ typedef struct Shape {
 } Shape;
 __attribute__((nonnull(1))) static inline int Shape_debug(
 	Shape const * const self,
-	char * const buf,
-	size_t const n
+	size_t const n,
+	char buf[static const n]
 ) {
 	switch (self->tag) {
 		case Point_tag:
-			return Point_debug(&self->Point, buf, n);
+			return Point_debug(&self->Point, n, buf);
 		case Line_tag:
-			return Line_debug(&self->Line, buf, n);
+			return Line_debug(&self->Line, n, buf);
 		case Frame_tag:
-			return Frame_debug(&self->Frame, buf, n);
+			return Frame_debug(&self->Frame, n, buf);
 	}
 	unreachable();
+}
+
+__attribute__((nonnull(1))) static inline int Shape_debug_len(Shape const * const self) {
+	char scratch[1];
+	return Shape_debug(self, sizeof scratch, scratch);
 }
 __attribute__((nonnull(1, 2))) static inline bool Shape_eq(
 	Shape const * const a,

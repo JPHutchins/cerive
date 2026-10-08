@@ -120,3 +120,10 @@ def test_render_withholds_certification_from_cells_with_gaps() -> None:
     )
     assert "| m3 | ❌ incomplete |" in out.markdown
     assert "| m3 | ✅ |" not in out.markdown
+
+
+def test_render_counts_a_repeated_variant_name_once_per_listing() -> None:
+    canon = {Key(v, "m3", "O0", "f"): "nop" for v in ("cerive", "handwritten")}
+    out = render_report(["cerive", "cerive", "handwritten"], ["m3"], ["O0"], canon, {}, {})
+    assert out.failures == ()
+    assert "| f | = |" in out.markdown

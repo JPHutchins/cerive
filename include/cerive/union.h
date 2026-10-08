@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "buf.h"
 #include "each.h"
 #include "new.h"
 
@@ -12,7 +13,7 @@
 #define CERIVE_P_union_member(variant) variant variant;
 #define CERIVE_P_union_debug_case(variant) \
 	case variant##_tag: \
-		return variant##_debug(&self->variant, buf, n);
+		return variant##_debug(&self->variant, n, buf);
 #define CERIVE_P_union_eq_case(variant) \
 	case variant##_tag: \
 		return variant##_eq(&a->variant, &b->variant);
@@ -28,23 +29,16 @@
 #define CERIVE_UNION(T, ...) CERIVE_P_union_def(T) CERIVE_P_over(CERIVE_UNION, T, __VA_ARGS__)
 
 #ifdef CERIVE_NO_DEBUG
-#	define CERIVE_UNION_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
-		(void) self; \
-		(void) buf; \
-		(void) n; \
-		return 0; \
-	}
+#	define CERIVE_UNION_Debug(T) CERIVE_P_debug_stub(T) CERIVE_P_debug_len(T)
 #else
 #	define CERIVE_UNION_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
+	CERIVE_P_debug_signature(T) { \
 		switch (self->tag) { \
 			CERIVE_P_union_over(CERIVE_P_union_debug_case, T) \
 		} \
 		unreachable(); \
-	}
+	} \
+	CERIVE_P_debug_len(T)
 #endif
 
 #define CERIVE_UNION_PartialEq(T) \
