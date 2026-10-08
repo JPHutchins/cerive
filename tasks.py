@@ -7,7 +7,15 @@ from camas import Claude, Config, Parallel, Project, Sequential, Task, by_glob
 ROOT = Path(__file__).parent
 C_TREE = ("bsp", "include", "src", "study", "tests", "variants")
 C_GLOBS = tuple(f"{tree}/**/*.{ext}" for tree in C_TREE for ext in ("c", "h"))
-C_BUILD_INPUTS = (*C_TREE, "cmake", "CMakeLists.txt", "CMakePresets.json", "flake.nix", "flake.lock")
+C_BUILD_INPUTS = (
+    *C_TREE,
+    "cmake",
+    "CMakeLists.txt",
+    "CMakePresets.json",
+    "flake.nix",
+    "flake.lock",
+    "tasks.py",
+)
 
 c_sources = by_glob(
     C_GLOBS,

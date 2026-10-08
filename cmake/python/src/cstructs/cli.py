@@ -38,8 +38,10 @@ def report(
     summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
 ) -> int:
     """Render the equivalence grid + asm diffs from the matrix artifacts, appending them to
-    --summary (the GitHub job summary under Actions); fails when the candidates diverge.
+    --summary (the GitHub job summary under Actions); fails when the candidates diverge, an
+    artifact is missing, or nothing was compared.
     """
+    missing: list[Path] = []
     canon: dict[Key, str] = {}
     sizes: dict[Key, int] = {}
     totals: dict[tuple[str, str, str], int] = {}
@@ -53,26 +55,31 @@ def report(
                     for fn, raw in split_functions(s_path.read_text()).items():
                         canon[(v, c, o, fn)] = canonical(raw)
                 else:
-                    print(f"warning: {s_path} not found", file=sys.stderr)
+                    missing.append(s_path)
                 if sym_path.exists():
                     for fn, size in parse_syms(sym_path.read_text()).items():
                         sizes[(v, c, o, fn)] = size
                 else:
-                    print(f"warning: {sym_path} not found", file=sys.stderr)
+                    missing.append(sym_path)
                 if size_path.exists():
                     info = parse_size(size_path.read_text())
                     if info is not None:
                         totals[(v, c, o)] = info.text
                 else:
-                    print(f"warning: {size_path} not found", file=sys.stderr)
+                    missing.append(size_path)
     rendered = render_report(variants, cpus, opts, canon, sizes, totals)
     (matrix_dir / "report.md").write_text(rendered.markdown + "\n")
     if summary is not None:
-        with summary.open("a") as f:
-            f.write(rendered.markdown + "\n")
+        try:
+            with summary.open("a") as f:
+                f.write(rendered.markdown + "\n")
+        except OSError as e:
+            print(f"warning: job summary not written: {e}", file=sys.stderr)
     print(f"\n{rendered.markdown}\n")
     print(f"full report: {matrix_dir}/report.md")
-    return 1 if rendered.divergences else 0
+    for path in missing:
+        print(f"error: {path} not found", file=sys.stderr)
+    return 1 if rendered.divergences or missing or not rendered.functions else 0
 
 
 @app.command

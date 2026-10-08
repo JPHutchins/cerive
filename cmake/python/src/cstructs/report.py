@@ -39,10 +39,13 @@ def _is_helper(fn: str) -> bool:
 
 
 class Report(NamedTuple):
-    """report.md, and every `fn@cpu/opt` cell that breaks the equivalence verdict."""
+    """report.md, every `fn@cpu/opt` cell that breaks the equivalence verdict, and how many
+    functions were compared at all.
+    """
 
     markdown: str
     divergences: tuple[str, ...]
+    functions: int
 
 
 def _labels(cells: Sequence[Cell]) -> tuple[str, ...]:
@@ -112,6 +115,10 @@ def render_report(
                     cells.append("")
                     continue
                 present = True
+                if len(have) < len(variants):
+                    base_mismatches.append((fn, cpu, opt))
+                    cells.append("∅")
+                    continue
                 if len({got[v] for v in have}) == 1:
                     cells.append("=")
                     continue
@@ -158,7 +165,7 @@ def render_report(
                 for v in variants
             ),
             "",
-            f"per function: `=` identical asm across impls · `+N` Δbytes vs {baseline} · `⚠` candidates disagree",
+            f"per function: `=` identical asm across impls · `+N` Δbytes vs {baseline} · `⚠` candidates disagree · `∅` missing from some impl",
             "",
             "| fn | " + " | ".join(opts) + " |",
             "|---|" + "---|" * len(opts),
@@ -183,13 +190,20 @@ def render_report(
     head += [
         f"**{cand_label} ≡ {baseline}:** "
         + (
-            "✅ identical everywhere"
+            "❌ no functions compared"
+            if not fns
+            else "✅ identical everywhere"
             if not base_mismatches
             else "⚠️ differ at " + ", ".join(_labels(base_mismatches))
         ),
         "",
-        *_overview(cpus, opts, {(k[1], k[2]) for k in canon}, [*strat_breaks, *base_mismatches]),
+        *_overview(
+            cpus,
+            opts,
+            {(k[1], k[2]) for k in canon if not _is_helper(k[3])},
+            [*strat_breaks, *base_mismatches],
+        ),
     ]
     if diffs:
         body += ["## diffs", "", *diffs]
-    return Report("\n".join(head + body), _labels([*strat_breaks, *base_mismatches]))
+    return Report("\n".join(head + body), _labels([*strat_breaks, *base_mismatches]), len(fns))

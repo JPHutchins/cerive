@@ -63,3 +63,16 @@ def test_render_marks_unbuilt_cells() -> None:
     canon = {(v, "m3", "O2", "f"): "mov\tr0" for v in ("cerive", "handwritten")}
     out = render_report(["cerive", "handwritten"], ["m3"], ["O0", "O2"], canon, {}, {})
     assert "| m3 | - | ✅ |" in out.markdown
+
+
+def test_render_flags_a_function_missing_from_one_impl() -> None:
+    canon = {("cerive", "m3", "O0", "f"): "mov\tr0"}
+    out = render_report(["cerive", "handwritten"], ["m3"], ["O0"], canon, {}, {})
+    assert out.divergences == ("f@m3/O0",)
+    assert "| f | ∅ |" in out.markdown
+
+
+def test_render_reports_an_empty_comparison() -> None:
+    out = render_report(["cerive", "handwritten"], ["m3"], ["O0"], {}, {}, {})
+    assert out.functions == 0
+    assert "❌ no functions compared" in out.markdown
