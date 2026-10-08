@@ -2,5 +2,3 @@ tests:
   cerive.module:
     platform_allow:
       - qemu_cortex_m3
-    integration_platforms:
-      - qemu_cortex_m3

@@ -2,21 +2,7 @@
 
 #include <zephyr/ztest.h>
 
-#include <cerive/cerive.h>
-
-#define Point_FIELDS(X) \
-	X(int32_t, x) \
-	X(int32_t, y)
-CERIVE(Point, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
-
-#define Line_FIELDS(X) \
-	X(Point, a) \
-	X(Point, b)
-CERIVE(Line, Struct, Debug, Constructor, PartialEq)
-
-#define Shape_VARIANTS(X) X(Point) X(Line)
-CERIVE_UNION(Shape, Debug, PartialEq)
-#define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)
+#include "shapes.h"
 
 ZTEST(cerive, test_struct_derives) {
 	Point const origin = Point_default();
@@ -34,21 +20,26 @@ ZTEST(cerive, test_debug) {
 	int const need = sizeof expect - 1;
 	Line const line = CERIVE_NEW(Line, .a = {1, 2}, .b = {3, 4});
 	char text[sizeof expect];
-	zassert_equal(Line_debug(&line, NULL, 0), need);
-	zassert_equal(Line_debug(&line, text, sizeof text), need);
+	zassert_equal(Line_debug_len(&line), need);
+	zassert_equal(Line_debug(&line, sizeof text, text), need);
 	zassert_str_equal(text, expect);
+	char one[1];
+	zassert_equal(Line_debug(&line, sizeof one, one), need);
+	zassert_equal(one[0], '\0');
 }
 
 ZTEST(cerive, test_union_derives) {
 	Shape const line = Shape_new(Line, .a = Point_new(1, 2), .b = Point_new(3, 4));
+	Shape const same = Shape_new(Line, .a = Point_new(1, 2), .b = Point_new(3, 4));
 	Shape const point = Shape_new(Point, .x = 1, .y = 2);
 	zassert_true(CERIVE_IS(line, Line));
 	zassert_false(CERIVE_IS(point, Line));
-	zassert_true(Shape_eq(&line, &line));
+	zassert_true(Shape_eq(&line, &same));
 	zassert_false(Shape_eq(&line, &point));
-	char text[32];
-	Shape_debug(&point, text, sizeof text);
-	zassert_str_equal(text, "Point { x=1 y=2 }");
+	static char const expect[] = "Point { x=1 y=2 }";
+	char text[sizeof expect];
+	zassert_equal(Shape_debug(&point, sizeof text, text), Shape_debug_len(&point));
+	zassert_str_equal(text, expect);
 }
 
 ZTEST_SUITE(cerive, NULL, NULL, NULL, NULL, NULL);

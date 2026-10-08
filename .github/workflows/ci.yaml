@@ -40,4 +40,4 @@ jobs:
           manifest-file-name: zephyr/west.yaml
           toolchains: arm-zephyr-eabi
       - run: west twister -T cerive/tests/zephyr -p qemu_cortex_m3 --inline-logs -v
-      - run: grep -r "SUITE PASS - 100.00% \[cerive\]" twister-out
+      - run: grep -rF 'SUITE PASS - 100.00% [cerive]' twister-out
