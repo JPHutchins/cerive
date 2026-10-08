@@ -42,9 +42,6 @@ testpaths = ["src", "tests"]
 line-length = 100
 
 [tool.ruff.lint]
-# preview is on solely to reach the DOC rules; explicit-preview-rules keeps
-# every other preview rule out until selected by exact code. select (not
-# extend-select) because preview also broadens ruff's default selection.
 preview = true
 explicit-preview-rules = true
 select = [
@@ -88,28 +85,24 @@ select = [
 "W",
 "YTT",
 ]
-# DOC201/DOC402 (missing returns/yields sections) are deliberately absent:
-# annotations are the single source of truth for parameter and return types,
-# so docstrings document only what the type system cannot — raised exceptions.
 ignore = [
-# formatter conflicts (https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules)
 "ISC001",
 "ISC002",
-"E501", # the formatter owns line length; the rest is unbreakable doctest output
-"D102", # code should document itself; a needed comment is a symptom
+"E501",
+"D102",
 "D103",
-"D105", # magic method contracts are defined by the data model, not prose
-"D107", # __init__ is documented by its class
-"D205", # summaries here are flowing paragraphs, not one-liners
-"D417", # params belong to the type system, not prose (see DOC201/DOC402 above)
-"PLC0415", # imports are scoped as narrowly as possible, by design
-"PLR0911", # complexity thresholds reward fragmentation over clarity
+"D105",
+"D107",
+"D205",
+"D417",
+"PLC0415",
+"PLR0911",
 "PLR0912",
 "PLR0913",
 "PLR0915",
-"PLR2004", # codegen geometry is full of honest small numbers
-"TRY003", # messages live in the raise; no exception-class zoo
-"TRY004", # ValueError is the CLI's user-error channel (dispatch catches it)
+"PLR2004",
+"TRY003",
+"TRY004",
 ]
 allowed-confusables = ["·", "Δ", "—", "≠", "≡", "⚠", "✅", "❌", "×"]
 
@@ -122,10 +115,10 @@ convention = "google"
 "INP001",
 "TC002",
 "TC003",
-] # tests document themselves by name; not an installed package
+]
 "src/cstructs/cli.py" = [
 "TC003",
-] # cyclopts resolves command annotations at runtime (get_type_hints)
+]
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -40,7 +40,6 @@ set(ARM_OPTS -mcpu=${ARM_CPU} -mthumb
 	-Wall -Wextra -Werror -Wdouble-promotion
 	-ffunction-sections -fdata-sections)
 add_compile_options(${ARM_OPTS})
-# cerive was created before the directory options above, so flag it explicitly.
 target_compile_options(cerive PRIVATE ${ARM_OPTS})
 add_link_options(-mcpu=${ARM_CPU} -mthumb
 	-nostartfiles -Wl,--gc-sections --specs=nano.specs
@@ -125,7 +124,6 @@ add_custom_target(report
 add_custom_target(evidence)
 add_dependencies(evidence report)
 
-# clang --analyze emits no object files, so it runs as a custom target.
 find_program(CLANG clang)
 if(CLANG)
 	set(CLANG_ANALYZE_FLAGS -std=c23 -Wall -Wextra -Wdouble-promotion -Werror

@@ -1,5 +1,3 @@
-# A build step, not configure-time, so configures stay side-effect-free.
-
 find_program(UV uv REQUIRED)
 
 set(PYDIR ${CMAKE_SOURCE_DIR}/cmake/python)

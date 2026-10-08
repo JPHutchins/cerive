@@ -59,7 +59,6 @@
 		unreachable(); \
 	}
 
-/* A macro expansion cannot produce a #define (C23 6.10.3.4). */
 #define CERIVE_UNION_NEW(T, variant, ...) \
 	(T){.tag = variant##_tag, .variant = {__VA_ARGS__}}
 

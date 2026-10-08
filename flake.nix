@@ -45,10 +45,6 @@
           UV_PYTHON_PREFERENCE = "only-system";
           UV_PYTHON = "${pkgs.python314}/bin/python3.14";
 
-          # camas (a Python app in `packages`) drags its whole python3.13 closure onto
-          # PYTHONPATH via mkShell; that leaks into uv/uvx subprocesses and breaks
-          # `camas mcp` (a stale pydantic_core shadows the isolated one). camas's own
-          # flake unsets it for the same reason.
           shellHook = "unset PYTHONPATH";
         };
       });
