@@ -312,19 +312,15 @@ static int many_variant_union(void) {
 			CHECK(a->val == 10);
 		}
 		CASE(Beta, b) {
-			(void) b;
 			CHECK(!"should not reach");
 		}
 		CASE(Gamma, g) {
-			(void) g;
 			CHECK(!"should not reach");
 		}
 		CASE(Delta, d) {
-			(void) d;
 			CHECK(!"should not reach");
 		}
 		CASE(Epsilon, e) {
-			(void) e;
 			CHECK(!"should not reach");
 		}
 	}
@@ -416,11 +412,9 @@ static int match_with_break(void) {
 			got = p->x;
 		}
 		CASE(Line, l) {
-			(void) l;
 			got = -2;
 		}
 		CASE(Frame, f) {
-			(void) f;
 			got = -3;
 		}
 	}
@@ -474,7 +468,6 @@ static int if_let(void) {
 
 	got = -1;
 	if LET(point, Frame, f) {
-		(void) f;
 		got = 99;
 	} else {
 		got = 42;
@@ -500,11 +493,9 @@ static int match_with_continue(void) {
 				continue;
 			}
 			CASE(Line, l) {
-				(void) l;
 				sum = -99;
 			}
 			CASE(Frame, f) {
-				(void) f;
 				sum = -99;
 			}
 		}

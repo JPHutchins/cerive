@@ -22,9 +22,9 @@
 #	define CERIVE_CASE(variant, bind) \
 		break; \
 		case variant##_tag: \
-			if (variant const * const bind = &cerive_matched->variant)
+			if ([[maybe_unused]] variant const * const bind = &cerive_matched->variant)
 #	define CERIVE_LET(instance, variant, bind) ( \
-		variant const * const bind = ( \
+		[[maybe_unused]] variant const * const bind = ( \
 			CERIVE_IS(instance, variant) ? &(instance).variant : (variant const *) NULL \
 		) \
 	)

@@ -30,10 +30,11 @@
 #ifdef CERIVE_NO_DEBUG
 #	define CERIVE_UNION_Debug(T) \
 	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, size_t const n, char buf[const n]) { \
-		(void) self; \
-		(void) buf; \
-		(void) n; \
+	static inline int T##_debug( \
+		[[maybe_unused]] T const * const self, \
+		[[maybe_unused]] size_t const n, \
+		[[maybe_unused]] char buf[const n] \
+	) { \
 		return 0; \
 	}
 #else
