@@ -8,7 +8,7 @@
 #define CERIVE_Nop(T)
 
 #define Unit_FIELDS(X) X(int32_t, x)
-CERIVE(Unit, Struct)
+CERIVE(Unit, Struct, Debug)
 #define Either_VARIANTS(X) X(Unit)
 CERIVE_UNION(Either)
 
@@ -27,6 +27,10 @@ CERIVE(Bounded, Struct, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, N
 #elif defined(REJECT_TWO_ARITY_POINTER)
 #	define TwoArity_FIELDS(X) X(int *, p)
 CERIVE(TwoArity, Struct)
+#elif defined(REJECT_NULL_DEBUG_BUFFER)
+int unit_debug_into_null(Unit const * const u) {
+	return Unit_debug(u, 1, NULL);
+}
 #elif defined(REJECT_MULTIWORD_SCALAR)
 #	define Wide_FIELDS(X) X(long long, v)
 CERIVE(Wide, Struct)

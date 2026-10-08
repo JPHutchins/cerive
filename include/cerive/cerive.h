@@ -109,45 +109,33 @@
 
 #define CERIVE_P_debug(...) CERIVE_P_dispatch(CERIVE_P_debug, __VA_ARGS__)
 #define CERIVE_P_debug_scalar(type, name) \
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), \
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), \
 		#name "=" CERIVE_P_scalar_format(type) " ", self->name);
 #define CERIVE_P_debug_record(type, name) \
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), #name "="); \
-	off += type##_debug(&self->name, cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off)); \
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), " ");
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), #name "="); \
+	off += type##_debug(&self->name, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off)); \
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), " ");
 #define CERIVE_P_debug_const_record(type, name) CERIVE_P_via_record( \
 	CERIVE_P_debug_record, \
 	type, \
 	name \
 )
 #define CERIVE_P_debug_pointer(star, type, name) \
-	off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), \
+	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), \
 		#name "=%p ", (void *) self->name);
 
 #ifdef CERIVE_NO_DEBUG
-#	define CERIVE_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, char * const buf, size_t const n) { \
-		(void) self; \
-		(void) buf; \
-		(void) n; \
-		return 0; \
-	}
+#	define CERIVE_Debug(T) CERIVE_P_debug_stub(T) CERIVE_P_debug_len(T)
 #else
-
 #	define CERIVE_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug( \
-		[[maybe_unused]] T const * const self, \
-		char * const buf, \
-		size_t const n \
-	) { \
+	CERIVE_P_debug_signature(T) { \
 		int off = 0; \
-		off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), #T " { "); \
+		off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), #T " { "); \
 		T##_FIELDS(CERIVE_P_debug) \
-		off += snprintf(cerive_buf_at(buf, n, off), cerive_buf_remaining(n, off), "}"); \
+		off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}"); \
 		return off; \
-	}
+	} \
+	CERIVE_P_debug_len(T)
 #endif
 
 #define CERIVE(T, ...) CERIVE_P_over(CERIVE, T, __VA_ARGS__)

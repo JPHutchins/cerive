@@ -78,6 +78,10 @@ set_tests_properties(scalars PROPERTIES TIMEOUT 30)
 add_library(test_compile_time OBJECT tests/test_compile_time.c)
 target_link_libraries(test_compile_time PRIVATE cerive)
 target_include_directories(test_compile_time PRIVATE variants/cerive)
+add_library(test_compile_time_no_debug OBJECT tests/test_compile_time.c)
+target_link_libraries(test_compile_time_no_debug PRIVATE cerive)
+target_include_directories(test_compile_time_no_debug PRIVATE variants/cerive)
+target_compile_definitions(test_compile_time_no_debug PRIVATE CERIVE_NO_DEBUG)
 
 set(README_EXAMPLES ${CMAKE_BINARY_DIR}/readme_examples.c)
 add_custom_command(OUTPUT ${README_EXAMPLES}
@@ -97,7 +101,13 @@ set(REJECT_THIRTEEN_TRAITS_DIAGNOSTIC "in expansion of macro .CERIVE_P_over.")
 set(REJECT_TWO_ARITY_POINTER_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
 set(REJECT_MULTIWORD_SCALAR_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
 set(REJECT_MATCH_WITHOUT_IF_DECL_DIAGNOSTIC "require N3356 if-declarations")
-foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER MULTIWORD_SCALAR MATCH_WITHOUT_IF_DECL)
+set(REJECT_NULL_DEBUG_BUFFER_DIAGNOSTIC "null .*non-null")
+foreach(rejected
+		THIRTEEN_TRAITS
+		TWO_ARITY_POINTER
+		MULTIWORD_SCALAR
+		MATCH_WITHOUT_IF_DECL
+		NULL_DEBUG_BUFFER)
 	add_test(NAME rejects_${rejected}
 		COMMAND ${CMAKE_C_COMPILER} -std=c23 -Wall -Wextra -Werror -fsyntax-only
 			-I${CMAKE_SOURCE_DIR}/include -DREJECT_${rejected}
@@ -126,6 +136,22 @@ add_dependencies(evidence report)
 
 find_program(CLANG clang)
 if(CLANG)
+	file(GLOB debug_bounds_headers CONFIGURE_DEPENDS
+		${CMAKE_SOURCE_DIR}/include/cerive/*.h ${CMAKE_SOURCE_DIR}/variants/cerive/*.h)
+	set(DEBUG_BOUNDS ${CMAKE_BINARY_DIR}/test_debug_bounds.ubsan)
+	add_custom_command(OUTPUT ${DEBUG_BOUNDS}
+		COMMAND ${CLANG} -std=c23 -Qunused-arguments -Wall -Wextra -Werror -Wdouble-promotion
+			-fsanitize=address,undefined -fno-sanitize-recover=all
+			-I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/variants/cerive
+			${CMAKE_SOURCE_DIR}/tests/test_debug_bounds.c ${CMAKE_SOURCE_DIR}/src/cerive.c
+			-o ${DEBUG_BOUNDS}
+		DEPENDS ${CMAKE_SOURCE_DIR}/tests/test_debug_bounds.c ${CMAKE_SOURCE_DIR}/tests/check.h
+			${CMAKE_SOURCE_DIR}/src/cerive.c
+			${debug_bounds_headers}
+		VERBATIM)
+	add_custom_target(test_debug_bounds ALL DEPENDS ${DEBUG_BOUNDS})
+	add_test(NAME debug_bounds COMMAND ${DEBUG_BOUNDS})
+	set_tests_properties(debug_bounds PROPERTIES TIMEOUT 30)
 	set(CLANG_ANALYZE_FLAGS -std=c23 -Wall -Wextra -Wdouble-promotion -Werror
 		-Qunused-arguments
 		-I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/variants/cerive

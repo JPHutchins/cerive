@@ -24,8 +24,7 @@ static void ensure_console(void) {
 	}
 }
 
-int _write(int const fd, char const * const buf, int const len) {
-	(void) fd;
+int _write([[maybe_unused]] int const fd, char const * const buf, int const len) {
 	ensure_console();
 	long const args[3] = {console, (long) buf, len};
 	return len - (int) semihost(sys_write, (void *) args);
@@ -41,29 +40,31 @@ __attribute__((__noreturn__)) void _exit(int const code) {
 }
 _Pragma("GCC diagnostic pop")
 
-int _read(int const fd, char * const buf, int const len) {
-	(void) fd, (void) buf, (void) len;
+int _read(
+	[[maybe_unused]] int const fd,
+	[[maybe_unused]] char * const buf,
+	[[maybe_unused]] int const len
+) {
 	return 0;
 }
-int _close(int const fd) {
-	(void) fd;
+int _close([[maybe_unused]] int const fd) {
 	return -1;
 }
-int _lseek(int const fd, int const off, int const whence) {
-	(void) fd, (void) off, (void) whence;
+int _lseek(
+	[[maybe_unused]] int const fd,
+	[[maybe_unused]] int const off,
+	[[maybe_unused]] int const whence
+) {
 	return 0;
 }
-int _fstat(int const fd, struct stat * const st) {
-	(void) fd;
+int _fstat([[maybe_unused]] int const fd, struct stat * const st) {
 	st->st_mode = S_IFCHR;
 	return 0;
 }
-int _isatty(int const fd) {
-	(void) fd;
+int _isatty([[maybe_unused]] int const fd) {
 	return 1;
 }
-int _kill(int const pid, int const sig) {
-	(void) pid, (void) sig;
+int _kill([[maybe_unused]] int const pid, [[maybe_unused]] int const sig) {
 	return -1;
 }
 int _getpid(void) {
