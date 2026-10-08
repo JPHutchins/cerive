@@ -1,4 +1,4 @@
-"""Reduce `gcc -E` output to project code, dropping system-header noise."""
+"""Preprocessed-output filtering."""
 
 import re
 
@@ -10,10 +10,7 @@ def _is_system(path: str, flags: str) -> bool:
 
 
 def strip_system_headers(preprocessed: str) -> str:
-    r"""Keep only lines whose enclosing `# line "file"` marker is project code.
-
-    System headers carry the `3` flag and built-ins start with `<`, so only
-    code pulled in via `-I` (the derive expansion) survives.
+    r"""Strip system headers from preprocessed output.
 
     >>> strip_system_headers('# 1 "a.c"\nkeep me\n# 1 "h.h" 3 4\ndrop me\n')
     'keep me\n'
@@ -30,7 +27,7 @@ def strip_system_headers(preprocessed: str) -> str:
 
 
 def _tidy(text: str) -> str:
-    r"""Drop leading/trailing blank lines and collapse interior blank runs.
+    r"""Normalize blank lines.
 
     >>> _tidy("\n\n\na\n\n\n\nb")
     'a\n\nb\n'
