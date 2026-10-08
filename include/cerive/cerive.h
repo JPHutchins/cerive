@@ -125,30 +125,17 @@
 		#name "=%p ", (void *) self->name);
 
 #ifdef CERIVE_NO_DEBUG
-#	define CERIVE_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug( \
-		[[maybe_unused]] T const * const self, \
-		[[maybe_unused]] size_t const n, \
-		[[maybe_unused]] char buf[const n] \
-	) { \
-		return 0; \
-	}
+#	define CERIVE_Debug(T) CERIVE_P_debug_stub(T) CERIVE_P_debug_len(T)
 #else
-
 #	define CERIVE_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug( \
-		[[maybe_unused]] T const * const self, \
-		size_t const n, \
-		char buf[const n] \
-	) { \
+	CERIVE_P_debug_signature(T) { \
 		int off = 0; \
 		off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), #T " { "); \
 		T##_FIELDS(CERIVE_P_debug) \
 		off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), "}"); \
 		return off; \
-	}
+	} \
+	CERIVE_P_debug_len(T)
 #endif
 
 #define CERIVE(T, ...) CERIVE_P_over(CERIVE, T, __VA_ARGS__)

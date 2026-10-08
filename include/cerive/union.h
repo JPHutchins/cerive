@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "buf.h"
 #include "each.h"
 #include "new.h"
 
@@ -28,24 +29,16 @@
 #define CERIVE_UNION(T, ...) CERIVE_P_union_def(T) CERIVE_P_over(CERIVE_UNION, T, __VA_ARGS__)
 
 #ifdef CERIVE_NO_DEBUG
-#	define CERIVE_UNION_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug( \
-		[[maybe_unused]] T const * const self, \
-		[[maybe_unused]] size_t const n, \
-		[[maybe_unused]] char buf[const n] \
-	) { \
-		return 0; \
-	}
+#	define CERIVE_UNION_Debug(T) CERIVE_P_debug_stub(T) CERIVE_P_debug_len(T)
 #else
 #	define CERIVE_UNION_Debug(T) \
-	__attribute__((nonnull(1))) \
-	static inline int T##_debug(T const * const self, size_t const n, char buf[const n]) { \
+	CERIVE_P_debug_signature(T) { \
 		switch (self->tag) { \
 			CERIVE_P_union_over(CERIVE_P_union_debug_case, T) \
 		} \
 		unreachable(); \
-	}
+	} \
+	CERIVE_P_debug_len(T)
 #endif
 
 #define CERIVE_UNION_PartialEq(T) \

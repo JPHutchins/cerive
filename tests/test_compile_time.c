@@ -7,6 +7,8 @@
 	X(int32_t, a) \
 	X(int64_t, b)
 CERIVE(CompileCheck, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
+#define CompileUnion_VARIANTS(X) X(CompileCheck)
+CERIVE_UNION(CompileUnion, Debug, PartialEq)
 
 _Static_assert(CERIVE_VERSION_MAJOR == 0, "version major");
 _Static_assert(CERIVE_VERSION_MINOR == 1, "version minor");
@@ -33,4 +35,9 @@ __attribute__((used)) static void sanity(void) {
 	CompileCheck_hash(&x);
 	char buf[64];
 	CompileCheck_debug(&x, sizeof buf, buf);
+	CompileCheck_debug_len(&x);
+	CompileUnion const u = {.tag = CompileCheck_tag, .CompileCheck = x};
+	CompileUnion_debug(&u, sizeof buf, buf);
+	CompileUnion_debug_len(&u);
+	CompileUnion_eq(&u, &u);
 }

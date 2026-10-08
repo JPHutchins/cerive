@@ -3,12 +3,16 @@
 
 _Static_assert(sizeof(int) <= sizeof(size_t), "size_t must be at least as wide as int");
 
-size_t cerive_buf_remaining(size_t const cap, int const off) {
-	return (off >= 0 && (size_t) off < cap) ? cap - (size_t) off : 0;
+static size_t clamped_position(size_t const cap, int const off) {
+	return (off >= 0 && (size_t) off < cap) ? (size_t) off : cap - 1;
 }
 
-char * cerive_buf_at(size_t const cap, char buf[const cap], int const off) {
-	return buf + ((off >= 0 && (size_t) off < cap) ? (size_t) off : cap);
+size_t cerive_buf_remaining(size_t const cap, int const off) {
+	return cap - clamped_position(cap, off);
+}
+
+char * cerive_buf_at(size_t const cap, char buf[static const cap], int const off) {
+	return buf + clamped_position(cap, off);
 }
 
 __attribute__((nonnull(2))) size_t cerive_hash_bytes(

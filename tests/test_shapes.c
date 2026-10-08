@@ -79,7 +79,7 @@ static int pointer_fields(void) {
 	int const need = Span_debug(&s, sizeof buf, buf);
 	CHECK(need == (int) strlen(buf));
 	CHECK(strncmp(buf, "Span { first=", 13) == 0);
-	CHECK(Span_debug(&s, 0, NULL) == need);
+	CHECK(Span_debug_len(&s) == need);
 
 	return fails;
 }
@@ -189,7 +189,11 @@ static int debug_buffer_contract(void) {
 	char const * const expect = "Point { x=42 y=7 }";
 	int const need = (int) strlen(expect);
 
-	CHECK(Point_debug(&p, 0, NULL) == need);
+	CHECK(Point_debug_len(&p) == need);
+
+	char one[1];
+	CHECK(Point_debug(&p, sizeof one, one) == need);
+	CHECK(one[0] == '\0');
 
 	char full[32];
 	CHECK(Point_debug(&p, sizeof full, full) == need);
@@ -381,13 +385,13 @@ static int debug_exact_buffer(void) {
 	int fails = 0;
 
 	Triple const t = (Triple){.a = 100, .b = 200, .c = 300};
-	char const * const expect = "Triple { a=100 b=200 c=300 }";
-	int const need = (int) strlen(expect);
+	static char const expect[] = "Triple { a=100 b=200 c=300 }";
+	int const need = sizeof expect - 1;
 
-	CHECK(Triple_debug(&t, 0, NULL) == need);
+	CHECK(Triple_debug_len(&t) == need);
 
-	char exact[64];
-	CHECK(Triple_debug(&t, need + 1, exact) == need);
+	char exact[sizeof expect];
+	CHECK(Triple_debug(&t, sizeof exact, exact) == need);
 	CHECK(strcmp(exact, expect) == 0);
 	CHECK(exact[need] == '\0');
 
