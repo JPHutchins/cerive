@@ -2,6 +2,8 @@
 
 import difflib
 import re
+from functools import reduce
+from typing import NamedTuple
 
 _COMMENT = re.compile(r"@.*$")
 _DROP = re.compile(
@@ -12,7 +14,38 @@ _DROP = re.compile(
 )
 _FUNC = re.compile(r"^\s*\.type\s+(\w+),\s*%function")
 _THUMB_FUNC = re.compile(r"^\s*\.thumb_func\s*$")
+_THUMB_LABEL = re.compile(r"^[.\w]+:$")
 _LOCAL = re.compile(r"\.L\w+")
+
+
+class _Scan(NamedTuple):
+    funcs: tuple[tuple[str, str], ...] = ()
+    pending: str | None = None
+    current: str | None = None
+    body: tuple[str, ...] = ()
+    thumb_pending: bool = False
+
+
+def _ends(current: str, line: str) -> bool:
+    return re.match(rf"^\s*\.size\s+{re.escape(current)}\b", line) is not None
+
+
+def _scan(state: _Scan, line: str) -> _Scan:
+    if (head := _FUNC.match(line)) is not None:
+        return state._replace(pending=head.group(1))
+    if _THUMB_FUNC.match(line):
+        return state._replace(thumb_pending=True)
+    if state.pending is not None and line.strip() == f"{state.pending}:":
+        return state._replace(current=state.pending, body=(), pending=None)
+    if state.current is not None and _ends(state.current, line):
+        return state._replace(
+            funcs=(*state.funcs, (state.current, "\n".join(state.body))), current=None
+        )
+    if state.current is not None:
+        return state._replace(body=(*state.body, line))
+    if state.thumb_pending and _THUMB_LABEL.match(line.strip()):
+        return state._replace(current=line.strip()[:-1], body=(), thumb_pending=False)
+    return state
 
 
 def split_functions(asm: str) -> dict[str, str]:
@@ -22,31 +55,15 @@ def split_functions(asm: str) -> dict[str, str]:
     'nop'
     >>> split_functions("\t.thumb_func\nf:\n\tnop\n\t.size f, .-f\n")["f"].strip()
     'nop'
+    >>> split_functions("\t.type f, %function\nf:\n\tnop\n")
+    {}
     """
-    funcs: dict[str, str] = {}
-    pending: str | None = None
-    current: str | None = None
-    body: list[str] = []
-    thumb_func_pending = False
-    for line in asm.splitlines():
-        head = _FUNC.match(line)
-        if head is not None:
-            pending = head.group(1)
-        elif _THUMB_FUNC.match(line):
-            thumb_func_pending = True
-        elif pending is not None and line.strip() == f"{pending}:":
-            current, body, pending = pending, [], None
-        elif current is not None and re.match(rf"^\s*\.size\s+{re.escape(current)}\b", line):
-            funcs[current] = "\n".join(body)
-            current = None
-        elif current is not None:
-            body.append(line)
-        elif thumb_func_pending:
-            clean = line.strip()
-            if clean.endswith(":") and re.match(r"^[.\w]+:$", clean):
-                current, body = clean[:-1], []
-                thumb_func_pending = False
-    return funcs
+    return dict(reduce(_scan, asm.splitlines(), _Scan()).funcs)
+
+
+def _renumbered(text: str) -> str:
+    labels = {label: f".L{n}" for n, label in enumerate(dict.fromkeys(_LOCAL.findall(text)))}
+    return _LOCAL.sub(lambda m: labels[m.group(0)], text)
 
 
 def canonical(body: str) -> str:
@@ -54,15 +71,16 @@ def canonical(body: str) -> str:
 
     >>> canonical("\tbl\tcerive_buf_remaining\t@ x\n.L7:\n\tbx\tlr")
     'bl\tcerive_buf_remaining\n.L0:\nbx\tlr'
+    >>> canonical("\tb\t.L9\n.L3:\n\tb\t.L9\n.L9:")
+    'b\t.L0\n.L1:\nb\t.L0\n.L0:'
     """
-    kept: list[str] = []
-    for raw in body.splitlines():
-        line = _COMMENT.sub("", raw).rstrip()
-        if not line.strip() or _DROP.match(line):
-            continue
-        kept.append(line.strip())
-    labels: dict[str, str] = {}
-    return _LOCAL.sub(lambda m: labels.setdefault(m.group(0), f".L{len(labels)}"), "\n".join(kept))
+    return _renumbered(
+        "\n".join(
+            line.strip()
+            for line in (_COMMENT.sub("", raw).rstrip() for raw in body.splitlines())
+            if line.strip() and not _DROP.match(line)
+        )
+    )
 
 
 def instr_count(canon: str) -> int:
@@ -98,9 +116,8 @@ def parse_syms(nm_output: str) -> dict[str, int]:
     >>> parse_syms("00000000 00000004 r table\n00000000 00000004 d names")
     {}
     """
-    out: dict[str, int] = {}
-    for line in nm_output.splitlines():
-        m = _SYM.match(line)
-        if m is not None:
-            out[m.group(2)] = int(m.group(1), 16)
-    return out
+    return {
+        m.group(2): int(m.group(1), 16)
+        for m in map(_SYM.match, nm_output.splitlines())
+        if m is not None
+    }
