@@ -87,7 +87,7 @@ def diff_lines(a: str, b: str, a_label: str, b_label: str) -> str:
     )
 
 
-_SYM = re.compile(r"^[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+\w\s+(\w+)\s*$")
+_SYM = re.compile(r"^[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+[TtWw]\s+(\w+)\s*$")
 
 
 def parse_syms(nm_output: str) -> dict[str, int]:
@@ -95,6 +95,8 @@ def parse_syms(nm_output: str) -> dict[str, int]:
 
     >>> parse_syms("00000000 00000018 T study_eq\n0000abcd t local_no_size")
     {'study_eq': 24}
+    >>> parse_syms("00000000 00000004 r table\n00000000 00000004 d names")
+    {}
     """
     out: dict[str, int] = {}
     for line in nm_output.splitlines():

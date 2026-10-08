@@ -26,7 +26,9 @@ class SizeInfo(NamedTuple):
     bss: int
 
 
-_BERKELEY_ROW = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+[0-9a-fA-F]+\s+\S", re.MULTILINE)
+_BERKELEY_ROW = re.compile(
+    r"^[ \t]*(\d+)[ \t]+(\d+)[ \t]+(\d+)[ \t]+\d+[ \t]+[0-9a-fA-F]+[ \t]+\S", re.MULTILINE
+)
 
 
 def parse_size(output: str) -> SizeInfo | None:
@@ -37,6 +39,8 @@ def parse_size(output: str) -> SizeInfo | None:
     >>> parse_size("nonsense") is None
     True
     >>> parse_size("error 1 2 3") is None
+    True
+    >>> parse_size(" 88 0\n 4 92 5c x.o") is None
     True
     """
     row = _BERKELEY_ROW.search(output)
@@ -53,6 +57,14 @@ class Cell(NamedTuple):
     fn: str
     cpu: str
     opt: str
+
+
+class Gap(NamedTuple):
+    """An evidence gap."""
+
+    cpu: str
+    opt: str
+    reason: str
 
 
 class Report(NamedTuple):
@@ -76,8 +88,11 @@ def _overview(
     opts: Sequence[str],
     present: set[tuple[str, str]],
     divergent: Sequence[Cell],
+    gaps: Sequence[Gap],
 ) -> list[str]:
     def cell(cpu: str, opt: str) -> str:
+        if any((g.cpu, g.opt) == (cpu, opt) for g in gaps):
+            return "❌ incomplete"
         if (cpu, opt) not in present:
             return "-"
         count = len({fn for fn, c, o in divergent if (c, o) == (cpu, opt)})
@@ -100,7 +115,7 @@ def render_report(
     canon: Mapping[Key, str],
     sizes: Mapping[Key, int],
     totals: Mapping[tuple[str, str, str], int],
-    evidence_gaps: Sequence[str] = (),
+    evidence_gaps: Sequence[Gap] = (),
 ) -> Report:
     """Render the evidence report."""
     baseline = "handwritten" if "handwritten" in variants else (variants[-1] if variants else "")
@@ -190,7 +205,7 @@ def render_report(
     incomplete = (
         *(() if candidates else ("no candidate impl to compare",)),
         *(() if fns else ("no functions compared",)),
-        *evidence_gaps,
+        *(gap.reason for gap in evidence_gaps),
     )
 
     def verdict(breaks: Sequence[Cell], marker: str) -> str:
@@ -211,6 +226,7 @@ def render_report(
             opts,
             {(k.cpu, k.opt) for k in canon if not _is_helper(k.fn)},
             [*strat_breaks, *base_mismatches],
+            evidence_gaps,
         ),
     ]
     if diffs:

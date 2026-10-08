@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
+from pathlib import Path
+
+import pytest
 
 from cstructs.cli import report
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    import pytest
 
 VARIANTS = ["cerive", "handwritten"]
 
@@ -74,7 +71,9 @@ def test_report_fails_on_a_function_with_no_instructions(tmp_path: Path) -> None
     for v in VARIANTS:
         write_cell(tmp_path, v, ".cfi_startproc")
     assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
-    assert "unusable artifact cerive.m3.O0.s" in (tmp_path / "report.md").read_text()
+    published = (tmp_path / "report.md").read_text()
+    assert "unusable artifact cerive.m3.O0.s" in published
+    assert "| f | = |" not in published
 
 
 def test_report_fails_when_asm_and_symbols_disagree(tmp_path: Path) -> None:
