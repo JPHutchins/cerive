@@ -12,11 +12,6 @@
 		} \
 	} while (0)
 
-/*
- * Scalar test types -- one per registered scalar. Each has a scalar field and
- * an int32_t discriminator to verify field ordering.
- */
-
 #define ScalarBool_FIELDS(X) \
 	X(bool, val) \
 	X(int32_t, id)
@@ -111,8 +106,6 @@ CERIVE(ScalarLLong, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 	X(unsigned_long_long, val) \
 	X(int32_t, id)
 CERIVE(ScalarULLong, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
-
-/* ---------- test functions ---------- */
 
 static int scalar_bool(void) {
 	int fails = 0;

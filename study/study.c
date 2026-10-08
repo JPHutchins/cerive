@@ -4,12 +4,6 @@
 
 #include "shapes.h"
 
-/*
- * Stable entry points so each impl's `static inline` API is emitted and its
- * codegen can be diffed across impls: Point (flat), Frame (nested recursion),
- * Shape (tagged-union dispatch).
- */
-
 int study_point_debug(Point const * const s, char * const b, size_t const n) {
 	return Point_debug(s, b, n);
 }

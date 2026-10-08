@@ -1,13 +1,8 @@
-/*
- * Compile-time validation file. NOT run under QEMU -- just compiled, so the
- * _Static_assert checks are verified during the build.
- */
 #include <stddef.h>
 #include <stdint.h>
 
 #include <cerive/cerive.h>
 
-/* A minimal test type for macro expansion sanity checks. */
 #define CompileCheck_FIELDS(X) \
 	X(int32_t, a) \
 	X(int64_t, b)
@@ -30,7 +25,6 @@ _Static_assert(sizeof(CompileCheck) == 12
 	"CompileCheck expected 12 or 16 bytes (int32_t+int64_t, may pad)");
 _Static_assert(sizeof(CompileCheck) >= 12, "CompileCheck at least 12 bytes");
 
-/* Macro expansion sanity: verify the functions are callable. */
 __attribute__((used)) static void sanity(void) {
 	CompileCheck const x = CompileCheck_default();
 	CompileCheck const y = CompileCheck_new(1, 2);
