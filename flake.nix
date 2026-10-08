@@ -4,10 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    # Task runner + MCP server: tasks.py is the SSOT for validation (devs, CI, agents).
     camas.url = "github:JPHutchins/camas/0.1.29";
 
-    # Zero-config C formatter (Rust, no flake of its own) for the agent autofix node.
     jphfmt = {
       url = "github:JPHutchins/jphfmt/v0.3.0";
       flake = false;
@@ -32,19 +30,18 @@
       devShells = forAllSystems (system: pkgs: {
         default = pkgs.mkShellNoCC {
           packages = [
-            pkgs.gcc-arm-embedded # arm-none-eabi-gcc 15.2 + newlib + semihosting specs
-            pkgs.qemu # qemu-system-arm (semihosting test runner)
+            pkgs.gcc-arm-embedded
+            pkgs.qemu
             pkgs.cmake
             pkgs.ninja
-            pkgs.astyle # pretty-prints preprocessed macro expansions
-            pkgs.uv # manages the `cstructs` python tooling (cmake/python/)
-            pkgs.python314 # interpreter uv resolves against
-            pkgs.clang # scan-build for clang static analyzer
-            camas.packages.${system}.with-mcp # task runner + MCP server (tasks.py SSOT)
-            self.packages.${system}.jphfmt # C formatter driven by the autofix node
+            pkgs.astyle
+            pkgs.uv
+            pkgs.python314
+            pkgs.clang
+            camas.packages.${system}.with-mcp
+            self.packages.${system}.jphfmt
           ];
 
-          # Make uv use the nix-provided interpreter instead of downloading one.
           UV_PYTHON_PREFERENCE = "only-system";
           UV_PYTHON = "${pkgs.python314}/bin/python3.14";
 
