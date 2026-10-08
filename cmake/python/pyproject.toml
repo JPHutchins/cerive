@@ -120,6 +120,8 @@ convention = "google"
 "tests/**" = [
 "D",
 "INP001",
+"TC002",
+"TC003",
 ] # tests document themselves by name; not an installed package
 "src/cstructs/cli.py" = [
 "TC003",

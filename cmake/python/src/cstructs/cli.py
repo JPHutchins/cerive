@@ -9,7 +9,7 @@ from cyclopts import App, Parameter
 
 from cstructs.asm import canonical, parse_syms, split_functions
 from cstructs.expand import strip_system_headers
-from cstructs.report import Key, parse_size, render_report
+from cstructs.report import Gap, Key, parse_size, render_report
 
 app = App(name="cstructs", help="String transforms backing the c-structs CMake build.")
 
@@ -45,7 +45,7 @@ def report(
     summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
 ) -> int:
     """Render, publish and gate on the evidence report."""
-    evidence_gaps: list[str] = []
+    evidence_gaps: list[Gap] = []
     canon: dict[Key, str] = {}
     sizes: dict[Key, int] = {}
     totals: dict[tuple[str, str, str], int] = {}
@@ -62,18 +62,22 @@ def report(
                 }
                 syms = parse_syms(sym_text) if sym_text is not None else {}
                 info = parse_size(size_text) if size_text is not None else None
+                s_usable = bool(bodies) and all(bodies.values())
                 evidence_gaps += [
-                    f"unusable artifact {name}"
+                    Gap(c, o, f"unusable artifact {name}")
                     for name, usable in (
-                        (f"{stem}.s", bool(bodies) and all(bodies.values())),
+                        (f"{stem}.s", s_usable),
                         (f"{stem}.sym", bool(syms)),
                         (f"{stem}.size", info is not None),
                     )
                     if not usable
                 ]
                 if bodies and syms and set(bodies) != set(syms):
-                    evidence_gaps.append(f"{stem}.s and {stem}.sym define different functions")
-                canon.update({(v, c, o, fn): body for fn, body in bodies.items()})
+                    evidence_gaps.append(
+                        Gap(c, o, f"{stem}.s and {stem}.sym define different functions")
+                    )
+                if s_usable:
+                    canon.update({(v, c, o, fn): body for fn, body in bodies.items()})
                 sizes.update({(v, c, o, fn): size for fn, size in syms.items()})
                 if info is not None:
                     totals[(v, c, o)] = info.text
@@ -99,5 +103,5 @@ def capture(out: Path, *command: str) -> int:
     if result.returncode != 0:
         print(f"error: command failed with exit code {result.returncode}", file=sys.stderr)
         return result.returncode
-    out.write_text(result.stdout)
+    out.write_text(result.stdout, encoding="utf-8")
     return 0

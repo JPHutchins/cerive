@@ -1,4 +1,4 @@
-from cstructs.report import SizeInfo, parse_size, render_report
+from cstructs.report import Gap, SizeInfo, parse_size, render_report
 
 
 def test_parse_size() -> None:
@@ -101,7 +101,22 @@ def test_render_publishes_unusable_artifacts() -> None:
         canon,
         {},
         {},
-        ["unusable artifact handwritten.m3.O0.size"],
+        [Gap("m3", "O0", "unusable artifact handwritten.m3.O0.size")],
     )
     assert out.failures == ("unusable artifact handwritten.m3.O0.size",)
     assert "**evidence incomplete:** unusable artifact handwritten.m3.O0.size" in out.markdown
+
+
+def test_render_withholds_certification_from_cells_with_gaps() -> None:
+    canon = {(v, "m3", "O0", "f"): "nop" for v in ("cerive", "handwritten")}
+    out = render_report(
+        ["cerive", "handwritten"],
+        ["m3"],
+        ["O0"],
+        canon,
+        {},
+        {},
+        [Gap("m3", "O0", "unusable artifact cerive.m3.O0.size")],
+    )
+    assert "| m3 | ❌ incomplete |" in out.markdown
+    assert "| m3 | ✅ |" not in out.markdown
