@@ -25,3 +25,18 @@ jobs:
         with:
           name: evidence-matrix
           path: build/matrix/
+  zephyr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: cerive
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: zephyrproject-rtos/action-zephyr-setup@v1.0.15
+        with:
+          app-path: cerive
+          manifest-file-name: zephyr/west.yml
+          toolchains: arm-zephyr-eabi
+      - run: west twister -T cerive/tests/zephyr -p qemu_cortex_m3 --inline-logs -v
