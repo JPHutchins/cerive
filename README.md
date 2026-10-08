@@ -104,27 +104,17 @@ axis is free to range over parts that no QEMU machine models.
 | `*.sym` | per-function sizes (`nm --print-size`) |
 
 and `build/matrix/report.md`: a top verdict (`cerive ≡ handwritten`?), a
-core × optimization-level overview (`✅` · `⚠️ N` divergent functions), a
-per-core, per-function **equivalence grid** (`=` identical asm · `+N` Δbytes vs
-baseline · `⚠` candidates disagree · `∅` missing from some impl), and, for any
-divergent cell, a **normalized unified asm diff** (helper names and local labels
-neutralized so only real codegen differences show). The comparison logic lives
-in the typed, tested [cstructs.asm](cmake/python/src/cstructs/asm.py) / `report`
-modules.
-
-The verdict is a gate: the `report` step exits non-zero on any divergence, and
-on evidence too incomplete to judge — a missing or unparsable artifact, no
-candidate variant, or no functions compared — which the report lists under
-**evidence incomplete**. Either way the evidence build, and therefore CI,
-fails. Under GitHub Actions the report is also appended to the job summary, and
-CI uploads `build/matrix/` as the `evidence-matrix` artifact.
+per-function **equivalence grid** (`=` identical asm · `+N` Δbytes vs baseline ·
+`⚠` candidates disagree), and, for any divergent cell, a **normalized unified
+asm diff** (helper names and local labels neutralized so only real codegen
+differences show). The comparison logic lives in the typed, tested
+[cstructs.asm](cmake/python/src/cstructs/asm.py) / `report` modules.
 
 The seeded `Point`/`Line`/`Frame`/`Span`/`Boxed` show the result: the derived code
-is **byte-identical** to the hand-written baseline at every optimization level on
-every swept core — flat structs, recursive nesting (`Frame`), pointer fields
-(`Span`), const members (`Boxed`), tagged-union dispatch (`Shape`) — across
-`Debug`/`new`/`Default`/`PartialEq`/`Ord`/`Hash`
-(`diff build/matrix/cerive.cortex-m3.O2.s build/matrix/handwritten.cortex-m3.O2.s`
+is **byte-identical** to the hand-written baseline at every optimization level —
+flat structs, recursive nesting (`Frame`), pointer fields (`Span`), const members
+(`Boxed`), tagged-union dispatch (`Shape`) — across `Debug`/`new`/`Default`/
+`PartialEq`/`Ord`/`Hash` (`diff build/matrix/hybrid.*.O2.s build/matrix/handwritten.*.O2.s`
 is empty). `Debug` is the one capability with real cost — it pulls in `snprintf`
 everywhere — kept for contrast. Reaching parity required the generated
 constructors to take `const` by-value parameters; without it a nested struct
@@ -133,19 +123,14 @@ tests.
 
 ### Sweeping the axes
 
-Cache variables, set at configure time. The defaults sweep
-`cortex-m0plus;cortex-m3;cortex-m4;cortex-m7;cortex-m33` (ARMv6-M through
-ARMv8-M Mainline) × `O0;O1;O2;O3;Os;Oz`; narrow them for a faster loop:
+Cache variables, set at configure time:
 
 ```sh
-cmake --preset arm --fresh \
-  -DMATRIX_CPUS="cortex-m0plus;cortex-m7" \
+cmake --preset arm \
+  -DMATRIX_CPUS="cortex-m0plus;cortex-m3;cortex-m4;cortex-m7" \
   -DMATRIX_OPTS="O0;O2;Os;Oz"
 cmake --build --preset evidence
 ```
-
-Being cache variables, they stick: an existing `build/` keeps its old values
-until reconfigured with `--fresh`.
 
 `ARM_CPU` / `QEMU_MACHINE` select the test core; the default pair
 (`cortex-m3` / `lm3s6965evb`) is the well-trodden semihosting target — change

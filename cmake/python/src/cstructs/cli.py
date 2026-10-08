@@ -29,6 +29,13 @@ def expand(file: Path) -> None:
         sys.exit(1)
 
 
+def _read(path: Path) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError, UnicodeDecodeError:
+        return None
+
+
 @app.command
 def report(
     matrix_dir: Path,
@@ -37,37 +44,41 @@ def report(
     opts: Tokens,
     summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
 ) -> int:
-    """Render the equivalence grid + asm diffs from the matrix artifacts, appending them to
-    --summary (the GitHub job summary under Actions); fails when the candidates diverge or
-    the evidence is incomplete.
-    """
-    unusable: list[str] = []
+    """Render, publish and gate on the evidence report."""
+    evidence_gaps: list[str] = []
     canon: dict[Key, str] = {}
     sizes: dict[Key, int] = {}
     totals: dict[tuple[str, str, str], int] = {}
     for v in variants:
         for c in cpus:
             for o in opts:
-                s_path = matrix_dir / f"{v}.{c}.{o}.s"
-                sym_path = matrix_dir / f"{v}.{c}.{o}.sym"
-                size_path = matrix_dir / f"{v}.{c}.{o}.size"
-                functions = split_functions(s_path.read_text()) if s_path.exists() else {}
-                syms = parse_syms(sym_path.read_text()) if sym_path.exists() else {}
-                info = parse_size(size_path.read_text()) if size_path.exists() else None
-                unusable += [
-                    path.name
-                    for path, usable in (
-                        (s_path, bool(functions)),
-                        (sym_path, bool(syms)),
-                        (size_path, info is not None),
+                stem = f"{v}.{c}.{o}"
+                s_text, sym_text, size_text = (
+                    _read(matrix_dir / f"{stem}.{ext}") for ext in ("s", "sym", "size")
+                )
+                bodies = {
+                    fn: canonical(raw)
+                    for fn, raw in (split_functions(s_text) if s_text is not None else {}).items()
+                }
+                syms = parse_syms(sym_text) if sym_text is not None else {}
+                info = parse_size(size_text) if size_text is not None else None
+                evidence_gaps += [
+                    f"unusable artifact {name}"
+                    for name, usable in (
+                        (f"{stem}.s", bool(bodies) and all(bodies.values())),
+                        (f"{stem}.sym", bool(syms)),
+                        (f"{stem}.size", info is not None),
                     )
                     if not usable
                 ]
-                canon.update({(v, c, o, fn): canonical(raw) for fn, raw in functions.items()})
+                if bodies and syms and set(bodies) != set(syms):
+                    evidence_gaps.append(f"{stem}.s and {stem}.sym define different functions")
+                canon.update({(v, c, o, fn): body for fn, body in bodies.items()})
                 sizes.update({(v, c, o, fn): size for fn, size in syms.items()})
                 if info is not None:
                     totals[(v, c, o)] = info.text
-    rendered = render_report(variants, cpus, opts, canon, sizes, totals, unusable)
+    rendered = render_report(variants, cpus, opts, canon, sizes, totals, evidence_gaps)
+    matrix_dir.mkdir(parents=True, exist_ok=True)
     (matrix_dir / "report.md").write_text(rendered.markdown + "\n", encoding="utf-8")
     if summary is not None:
         try:
