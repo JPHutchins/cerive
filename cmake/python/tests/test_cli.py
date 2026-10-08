@@ -36,11 +36,25 @@ def test_report_fails_on_divergence(tmp_path: Path) -> None:
     assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
 
 
-def test_report_fails_on_missing_artifact(tmp_path: Path) -> None:
+def test_report_fails_and_publishes_a_missing_artifact(tmp_path: Path) -> None:
     for v in VARIANTS:
         write_cell(tmp_path, v, "nop")
     (tmp_path / "handwritten.m3.O0.size").unlink()
+    summary = tmp_path / "summary.md"
+    assert report(tmp_path, VARIANTS, ["m3"], ["O0"], summary) == 1
+    assert "unusable artifact handwritten.m3.O0.size" in (tmp_path / "report.md").read_text()
+    assert "❌ evidence incomplete" in summary.read_text()
+
+
+def test_report_fails_on_artifacts_that_parse_to_nothing(tmp_path: Path) -> None:
+    for v in VARIANTS:
+        write_cell(tmp_path, v, "nop")
+    (tmp_path / "cerive.m3.O0.sym").write_text("")
+    (tmp_path / "handwritten.m3.O0.size").write_text("garbage\n")
     assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
+    published = (tmp_path / "report.md").read_text()
+    assert "unusable artifact cerive.m3.O0.sym" in published
+    assert "unusable artifact handwritten.m3.O0.size" in published
 
 
 def test_report_fails_when_nothing_was_compared(tmp_path: Path) -> None:

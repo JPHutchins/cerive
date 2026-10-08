@@ -39,13 +39,12 @@ def _is_helper(fn: str) -> bool:
 
 
 class Report(NamedTuple):
-    """report.md, every `fn@cpu/opt` cell that breaks the equivalence verdict, and how many
-    functions were compared at all.
+    """report.md, and every reason it fails the gate: a divergent `fn@cpu/opt` cell, or
+    evidence too incomplete to support a verdict. The markdown renders the same reasons.
     """
 
     markdown: str
-    divergences: tuple[str, ...]
-    functions: int
+    failures: tuple[str, ...]
 
 
 def _labels(cells: Sequence[Cell]) -> tuple[str, ...]:
@@ -86,10 +85,12 @@ def render_report(
     canon: Mapping[Key, str],
     sizes: Mapping[Key, int],
     totals: Mapping[tuple[str, str, str], int],
+    unusable: Sequence[str] = (),
 ) -> Report:
     """Build report.md. `canon`/`sizes` are keyed (impl, cpu, opt, fn); `totals`
-    is whole-TU text bytes keyed (impl, cpu, opt). handwritten is the baseline;
-    the remaining variants are the candidate strategies compared against it.
+    is whole-TU text bytes keyed (impl, cpu, opt); `unusable` names the artifacts
+    the caller could not read or parse. handwritten is the baseline; the remaining
+    variants are the candidate strategies compared against it.
     """
     baseline = "handwritten" if "handwritten" in variants else (variants[-1] if variants else "")
     candidates = [v for v in variants if v != baseline]
@@ -175,28 +176,25 @@ def render_report(
             "",
         ]
 
+    incomplete = (
+        *(() if candidates else ("no candidate impl to compare",)),
+        *(() if fns else ("no functions compared",)),
+        *(f"unusable artifact {name}" for name in unusable),
+    )
+
+    def verdict(breaks: Sequence[Cell], marker: str) -> str:
+        if breaks:
+            return f"{marker} differ at " + ", ".join(_labels(breaks))
+        return "❌ evidence incomplete" if incomplete else "✅ identical everywhere"
+
     cand_label = " ≡ ".join(candidates) if candidates else "(none)"
     head = ["# Evidence — codegen comparison", ""]
     if len(candidates) >= 2:  # only meaningful with rival strategies to agree/disagree
-        head += [
-            f"**{cand_label}:** "
-            + (
-                "✅ identical everywhere"
-                if not strat_breaks
-                else "❌ differ at " + ", ".join(_labels(strat_breaks))
-            ),
-            "",
-        ]
+        head += [f"**{cand_label}:** " + verdict(strat_breaks, "❌"), ""]
     head += [
-        f"**{cand_label} ≡ {baseline}:** "
-        + (
-            "❌ no functions compared"
-            if not fns
-            else "✅ identical everywhere"
-            if not base_mismatches
-            else "⚠️ differ at " + ", ".join(_labels(base_mismatches))
-        ),
+        f"**{cand_label} ≡ {baseline}:** " + verdict(base_mismatches, "⚠️"),
         "",
+        *(["**evidence incomplete:** " + "; ".join(incomplete), ""] if incomplete else []),
         *_overview(
             cpus,
             opts,
@@ -206,4 +204,6 @@ def render_report(
     ]
     if diffs:
         body += ["## diffs", "", *diffs]
-    return Report("\n".join(head + body), _labels([*strat_breaks, *base_mismatches]), len(fns))
+    return Report(
+        "\n".join(head + body), (*_labels([*strat_breaks, *base_mismatches]), *incomplete)
+    )

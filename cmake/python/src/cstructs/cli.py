@@ -38,10 +38,10 @@ def report(
     summary: Annotated[Path | None, Parameter(env_var="GITHUB_STEP_SUMMARY")] = None,
 ) -> int:
     """Render the equivalence grid + asm diffs from the matrix artifacts, appending them to
-    --summary (the GitHub job summary under Actions); fails when the candidates diverge, an
-    artifact is missing, or nothing was compared.
+    --summary (the GitHub job summary under Actions); fails when the candidates diverge or
+    the evidence is incomplete.
     """
-    missing: list[Path] = []
+    unusable: list[str] = []
     canon: dict[Key, str] = {}
     sizes: dict[Key, int] = {}
     totals: dict[tuple[str, str, str], int] = {}
@@ -51,35 +51,33 @@ def report(
                 s_path = matrix_dir / f"{v}.{c}.{o}.s"
                 sym_path = matrix_dir / f"{v}.{c}.{o}.sym"
                 size_path = matrix_dir / f"{v}.{c}.{o}.size"
-                if s_path.exists():
-                    for fn, raw in split_functions(s_path.read_text()).items():
-                        canon[(v, c, o, fn)] = canonical(raw)
-                else:
-                    missing.append(s_path)
-                if sym_path.exists():
-                    for fn, size in parse_syms(sym_path.read_text()).items():
-                        sizes[(v, c, o, fn)] = size
-                else:
-                    missing.append(sym_path)
-                if size_path.exists():
-                    info = parse_size(size_path.read_text())
-                    if info is not None:
-                        totals[(v, c, o)] = info.text
-                else:
-                    missing.append(size_path)
-    rendered = render_report(variants, cpus, opts, canon, sizes, totals)
-    (matrix_dir / "report.md").write_text(rendered.markdown + "\n")
+                functions = split_functions(s_path.read_text()) if s_path.exists() else {}
+                syms = parse_syms(sym_path.read_text()) if sym_path.exists() else {}
+                info = parse_size(size_path.read_text()) if size_path.exists() else None
+                unusable += [
+                    path.name
+                    for path, usable in (
+                        (s_path, bool(functions)),
+                        (sym_path, bool(syms)),
+                        (size_path, info is not None),
+                    )
+                    if not usable
+                ]
+                canon.update({(v, c, o, fn): canonical(raw) for fn, raw in functions.items()})
+                sizes.update({(v, c, o, fn): size for fn, size in syms.items()})
+                if info is not None:
+                    totals[(v, c, o)] = info.text
+    rendered = render_report(variants, cpus, opts, canon, sizes, totals, unusable)
+    (matrix_dir / "report.md").write_text(rendered.markdown + "\n", encoding="utf-8")
     if summary is not None:
         try:
-            with summary.open("a") as f:
+            with summary.open("a", encoding="utf-8") as f:
                 f.write(rendered.markdown + "\n")
         except OSError as e:
             print(f"warning: job summary not written: {e}", file=sys.stderr)
     print(f"\n{rendered.markdown}\n")
     print(f"full report: {matrix_dir}/report.md")
-    for path in missing:
-        print(f"error: {path} not found", file=sys.stderr)
-    return 1 if rendered.divergences or missing or not rendered.functions else 0
+    return 1 if rendered.failures else 0
 
 
 @app.command
