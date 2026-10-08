@@ -20,8 +20,9 @@
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__
 
 #define CERIVE_P_decl(...) CERIVE_P_dispatch(CERIVE_P_decl, __VA_ARGS__)
-#define CERIVE_P_reject_pointer(type) static_assert(sizeof((type){} * 0));
-#define CERIVE_P_decl_scalar(type, name) type name; CERIVE_P_reject_pointer(type)
+#define CERIVE_P_require_registered_type(type) \
+	static_assert(_Generic((type){}, CERIVE_P_scalar_type(type): 1, default: 0));
+#define CERIVE_P_decl_scalar(type, name) type name; CERIVE_P_require_registered_type(type)
 #define CERIVE_P_decl_record(type, name) type name;
 #define CERIVE_P_decl_const_record(type, name) type name;
 #define CERIVE_P_decl_pointer(star, type, name) type star name;

@@ -4,30 +4,33 @@
 
 #include "each.h"
 
-#define CERIVE_P_scalar(format) format, 1,
-#define CERIVE_P_scalar_bool CERIVE_P_scalar("%d")
-#define CERIVE_P_scalar_char CERIVE_P_scalar("%c")
-#define CERIVE_P_scalar_int8_t CERIVE_P_scalar("%" PRId8)
-#define CERIVE_P_scalar_int16_t CERIVE_P_scalar("%" PRId16)
-#define CERIVE_P_scalar_int32_t CERIVE_P_scalar("%" PRId32)
-#define CERIVE_P_scalar_int64_t CERIVE_P_scalar("%" PRId64)
-#define CERIVE_P_scalar_uint8_t CERIVE_P_scalar("%" PRIu8)
-#define CERIVE_P_scalar_uint16_t CERIVE_P_scalar("%" PRIu16)
-#define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32)
-#define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64)
-#define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu")
-#define CERIVE_P_scalar_float CERIVE_P_scalar("%g")
-#define CERIVE_P_scalar_double CERIVE_P_scalar("%g")
-#define CERIVE_P_scalar_int CERIVE_P_scalar("%d")
-#define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u")
-#define CERIVE_P_scalar_long CERIVE_P_scalar("%ld")
-#define CERIVE_P_scalar_unsigned_long CERIVE_P_scalar("%lu")
-#define CERIVE_P_scalar_long_long CERIVE_P_scalar("%lld")
-#define CERIVE_P_scalar_unsigned_long_long CERIVE_P_scalar("%llu")
+#define CERIVE_P_scalar(format, type) format, 1, type,
+#define CERIVE_P_scalar_bool CERIVE_P_scalar("%d", bool)
+#define CERIVE_P_scalar_char CERIVE_P_scalar("%c", char)
+#define CERIVE_P_scalar_int8_t CERIVE_P_scalar("%" PRId8, int8_t)
+#define CERIVE_P_scalar_int16_t CERIVE_P_scalar("%" PRId16, int16_t)
+#define CERIVE_P_scalar_int32_t CERIVE_P_scalar("%" PRId32, int32_t)
+#define CERIVE_P_scalar_int64_t CERIVE_P_scalar("%" PRId64, int64_t)
+#define CERIVE_P_scalar_uint8_t CERIVE_P_scalar("%" PRIu8, uint8_t)
+#define CERIVE_P_scalar_uint16_t CERIVE_P_scalar("%" PRIu16, uint16_t)
+#define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32, uint32_t)
+#define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64, uint64_t)
+#define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu", size_t)
+#define CERIVE_P_scalar_float CERIVE_P_scalar("%g", float)
+#define CERIVE_P_scalar_double CERIVE_P_scalar("%g", double)
+#define CERIVE_P_scalar_int CERIVE_P_scalar("%d", int)
+#define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u", unsigned)
+#define CERIVE_P_scalar_long CERIVE_P_scalar("%ld", long)
+#define CERIVE_P_scalar_unsigned_long CERIVE_P_scalar("%lu", unsigned long)
+#define CERIVE_P_scalar_long_long CERIVE_P_scalar("%lld", long long)
+#define CERIVE_P_scalar_unsigned_long_long CERIVE_P_scalar("%llu", unsigned long long)
 
 #define CERIVE_P_is_scalar(type) CERIVE_P_is_scalar_(CERIVE_P_scalar_##type, 0)
 #define CERIVE_P_is_scalar_(...) CERIVE_P_is_scalar__(__VA_ARGS__)
 #define CERIVE_P_is_scalar__(format, flag, ...) flag
+#define CERIVE_P_scalar_type(type) CERIVE_P_scalar_type_(CERIVE_P_scalar_##type)
+#define CERIVE_P_scalar_type_(...) CERIVE_P_scalar_type__(__VA_ARGS__)
+#define CERIVE_P_scalar_type__(format, flag, registered, ...) registered
 #define CERIVE_P_scalar_format(type) CERIVE_P_scalar_format_(CERIVE_P_scalar_##type)
 #define CERIVE_P_scalar_format_(...) CERIVE_P_scalar_format__(__VA_ARGS__)
 #define CERIVE_P_scalar_format__(format, ...) format

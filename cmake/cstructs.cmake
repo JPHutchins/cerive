@@ -14,6 +14,6 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E env UV_PROJECT_ENVIRONMENT=${CSTRUCTS_VENV}
 		${UV} sync --frozen --no-dev --project ${PYDIR}
 	COMMAND ${CMAKE_COMMAND} -E touch ${CSTRUCTS_STAMP}
-	DEPENDS ${PYDIR}/uv.lock
+	DEPENDS ${PYDIR}/uv.lock ${PYDIR}/pyproject.toml
 	COMMENT "cstructs: uv sync --frozen (uv.lock changed)"
 	VERBATIM)

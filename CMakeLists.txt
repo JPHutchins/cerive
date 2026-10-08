@@ -94,12 +94,17 @@ set_tests_properties(readme PROPERTIES TIMEOUT 30)
 
 add_library(test_rejects OBJECT tests/test_rejects.c)
 target_link_libraries(test_rejects PRIVATE cerive)
-foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER MATCH_WITHOUT_IF_DECL)
+set(REJECT_THIRTEEN_TRAITS_DIAGNOSTIC "in expansion of macro .CERIVE_P_over.")
+set(REJECT_TWO_ARITY_POINTER_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
+set(REJECT_MULTIWORD_SCALAR_DIAGNOSTIC "in expansion of macro .CERIVE_P_require_registered_type.")
+set(REJECT_MATCH_WITHOUT_IF_DECL_DIAGNOSTIC "require N3356 if-declarations")
+foreach(rejected THIRTEEN_TRAITS TWO_ARITY_POINTER MULTIWORD_SCALAR MATCH_WITHOUT_IF_DECL)
 	add_test(NAME rejects_${rejected}
 		COMMAND ${CMAKE_C_COMPILER} -std=c23 -Wall -Wextra -Werror -fsyntax-only
 			-I${CMAKE_SOURCE_DIR}/include -DREJECT_${rejected}
 			${CMAKE_SOURCE_DIR}/tests/test_rejects.c)
-	set_tests_properties(rejects_${rejected} PROPERTIES WILL_FAIL TRUE)
+	set_tests_properties(rejects_${rejected} PROPERTIES
+		PASS_REGULAR_EXPRESSION "${REJECT_${rejected}_DIAGNOSTIC}")
 endforeach()
 
 include(cmake/matrix.cmake)

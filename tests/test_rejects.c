@@ -27,9 +27,15 @@ CERIVE(Bounded, Struct, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, N
 #elif defined(REJECT_TWO_ARITY_POINTER)
 #	define TwoArity_FIELDS(X) X(int *, p)
 CERIVE(TwoArity, Struct)
+#elif defined(REJECT_MULTIWORD_SCALAR)
+#	define Wide_FIELDS(X) X(long long, v)
+CERIVE(Wide, Struct)
 #else
 #	define Bounded_FIELDS(X) X(int32_t, x)
 CERIVE(Bounded, Struct, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop, Nop)
 #	define ThreeArity_FIELDS(X) X(*, int, p)
 CERIVE(ThreeArity, Struct)
+typedef long long long_long;
+#	define Wide_FIELDS(X) X(long_long, v)
+CERIVE(Wide, Struct, Debug)
 #endif
