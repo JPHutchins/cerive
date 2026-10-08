@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
 Key = tuple[str, str, str, str]  # impl, cpu, opt, function
-Cell = tuple[str, str, str]  # function, cpu, opt
 
 
 class SizeInfo(NamedTuple):
@@ -20,37 +19,46 @@ class SizeInfo(NamedTuple):
     bss: int
 
 
+_BERKELEY_ROW = re.compile(r"^\s*(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+[0-9a-fA-F]+\s+\S", re.MULTILINE)
+
+
 def parse_size(output: str) -> SizeInfo | None:
-    r"""Parse the data row of `size` (Berkeley). First three ints are text/data/bss.
+    r"""Parse Berkeley `size` output.
 
     >>> parse_size("  text  data  bss\n  88  0  4  92  5c  x.o")
     SizeInfo(text=88, data=0, bss=4)
     >>> parse_size("nonsense") is None
     True
+    >>> parse_size("error 1 2 3") is None
+    True
     """
-    numbers = re.findall(r"\d+", output)
-    if len(numbers) < 3:
-        return None
-    return SizeInfo(int(numbers[0]), int(numbers[1]), int(numbers[2]))
+    row = _BERKELEY_ROW.search(output)
+    return SizeInfo(*map(int, row.groups())) if row else None
 
 
 def _is_helper(fn: str) -> bool:
     return fn.startswith(("cerive_", "hw_"))
 
 
+class Cell(NamedTuple):
+    """A comparison cell."""
+
+    fn: str
+    cpu: str
+    opt: str
+
+
 class Report(NamedTuple):
-    """report.md, and every reason it fails the gate: a divergent `fn@cpu/opt` cell, or
-    evidence too incomplete to support a verdict. The markdown renders the same reasons.
-    """
+    """A rendered evidence report and its verdict."""
 
     markdown: str
     failures: tuple[str, ...]
 
 
 def _labels(cells: Sequence[Cell]) -> tuple[str, ...]:
-    """`fn@cpu/opt`, deduplicated in first-seen order.
+    """Unique cell labels.
 
-    >>> _labels([("f", "m3", "O0"), ("g", "m3", "O0"), ("f", "m3", "O0")])
+    >>> _labels([Cell("f", "m3", "O0"), Cell("g", "m3", "O0"), Cell("f", "m3", "O0")])
     ('f@m3/O0', 'g@m3/O0')
     """
     return tuple(dict.fromkeys(f"{fn}@{cpu}/{opt}" for fn, cpu, opt in cells))
@@ -66,7 +74,7 @@ def _overview(
         if (cpu, opt) not in present:
             return "-"
         count = len({fn for fn, c, o in divergent if (c, o) == (cpu, opt)})
-        return f"⚠️ {count}" if count else "✅"
+        return f"❌ {count}" if count else "✅"
 
     return [
         "functions whose asm differs, per core × optimization level:",
@@ -85,13 +93,9 @@ def render_report(
     canon: Mapping[Key, str],
     sizes: Mapping[Key, int],
     totals: Mapping[tuple[str, str, str], int],
-    unusable: Sequence[str] = (),
+    evidence_gaps: Sequence[str] = (),
 ) -> Report:
-    """Build report.md. `canon`/`sizes` are keyed (impl, cpu, opt, fn); `totals`
-    is whole-TU text bytes keyed (impl, cpu, opt); `unusable` names the artifacts
-    the caller could not read or parse. handwritten is the baseline; the remaining
-    variants are the candidate strategies compared against it.
-    """
+    """Render the evidence report."""
     baseline = "handwritten" if "handwritten" in variants else (variants[-1] if variants else "")
     candidates = [v for v in variants if v != baseline]
     fns = sorted(
@@ -117,7 +121,7 @@ def render_report(
                     continue
                 present = True
                 if len(have) < len(variants):
-                    base_mismatches.append((fn, cpu, opt))
+                    base_mismatches.append(Cell(fn, cpu, opt))
                     cells.append("∅")
                     continue
                 if len({got[v] for v in have}) == 1:
@@ -126,7 +130,7 @@ def render_report(
                 cand_here = [v for v in candidates if got[v] is not None]
                 strat_diff = len({got[v] for v in cand_here}) > 1
                 if strat_diff:
-                    strat_breaks.append((fn, cpu, opt))
+                    strat_breaks.append(Cell(fn, cpu, opt))
                     cells.append("⚠")
                 else:
                     sz_a = sizes.get((candidates[0], cpu, opt, fn)) if candidates else None
@@ -137,7 +141,7 @@ def render_report(
                 if baseline_got is not None and any(
                     got[v] is not None and got[v] != baseline_got for v in cand_here
                 ):
-                    base_mismatches.append((fn, cpu, opt))
+                    base_mismatches.append(Cell(fn, cpu, opt))
                 x, y = (
                     (cand_here[0], cand_here[1])
                     if strat_diff and len(cand_here) >= 2
@@ -179,7 +183,7 @@ def render_report(
     incomplete = (
         *(() if candidates else ("no candidate impl to compare",)),
         *(() if fns else ("no functions compared",)),
-        *(f"unusable artifact {name}" for name in unusable),
+        *evidence_gaps,
     )
 
     def verdict(breaks: Sequence[Cell], marker: str) -> str:
@@ -192,7 +196,7 @@ def render_report(
     if len(candidates) >= 2:  # only meaningful with rival strategies to agree/disagree
         head += [f"**{cand_label}:** " + verdict(strat_breaks, "❌"), ""]
     head += [
-        f"**{cand_label} ≡ {baseline}:** " + verdict(base_mismatches, "⚠️"),
+        f"**{cand_label} ≡ {baseline}:** " + verdict(base_mismatches, "❌"),
         "",
         *(["**evidence incomplete:** " + "; ".join(incomplete), ""] if incomplete else []),
         *_overview(

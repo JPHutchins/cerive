@@ -43,8 +43,8 @@ def test_render_keeps_each_core_of_a_baseline_mismatch() -> None:
     }
     out = render_report(["cerive", "handwritten"], ["m0plus", "m3"], ["O0"], canon, {}, {})
     assert out.failures == ("f@m0plus/O0", "f@m3/O0")
-    assert "⚠️ differ at f@m0plus/O0, f@m3/O0" in out.markdown
-    assert "| m0plus | ⚠️ 1 |" in out.markdown
+    assert "❌ differ at f@m0plus/O0, f@m3/O0" in out.markdown
+    assert "| m0plus | ❌ 1 |" in out.markdown
     assert "<details open><summary><b>m3</b></summary>" in out.markdown
 
 
@@ -95,7 +95,13 @@ def test_render_needs_a_candidate_to_compare() -> None:
 def test_render_publishes_unusable_artifacts() -> None:
     canon = {(v, "m3", "O0", "f"): "nop" for v in ("cerive", "handwritten")}
     out = render_report(
-        ["cerive", "handwritten"], ["m3"], ["O0"], canon, {}, {}, ["handwritten.m3.O0.size"]
+        ["cerive", "handwritten"],
+        ["m3"],
+        ["O0"],
+        canon,
+        {},
+        {},
+        ["unusable artifact handwritten.m3.O0.size"],
     )
     assert out.failures == ("unusable artifact handwritten.m3.O0.size",)
     assert "**evidence incomplete:** unusable artifact handwritten.m3.O0.size" in out.markdown

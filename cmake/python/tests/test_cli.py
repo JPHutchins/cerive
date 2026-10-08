@@ -68,3 +68,35 @@ def test_unwritable_summary_does_not_decide_the_verdict(
         write_cell(tmp_path, v, "nop")
     assert report(tmp_path, VARIANTS, ["m3"], ["O0"], tmp_path) == 0
     assert "job summary not written" in capsys.readouterr().err
+
+
+def test_report_fails_on_a_function_with_no_instructions(tmp_path: Path) -> None:
+    for v in VARIANTS:
+        write_cell(tmp_path, v, ".cfi_startproc")
+    assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
+    assert "unusable artifact cerive.m3.O0.s" in (tmp_path / "report.md").read_text()
+
+
+def test_report_fails_when_asm_and_symbols_disagree(tmp_path: Path) -> None:
+    for v in VARIANTS:
+        write_cell(tmp_path, v, "nop")
+    (tmp_path / "cerive.m3.O0.sym").write_text("00000000 00000002 T f\n00000002 00000002 T g\n")
+    assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
+    assert (
+        "cerive.m3.O0.s and cerive.m3.O0.sym define different functions"
+        in (tmp_path / "report.md").read_text()
+    )
+
+
+def test_report_publishes_an_undecodable_artifact(tmp_path: Path) -> None:
+    for v in VARIANTS:
+        write_cell(tmp_path, v, "nop")
+    (tmp_path / "handwritten.m3.O0.s").write_bytes(b"\xff\xfe")
+    assert report(tmp_path, VARIANTS, ["m3"], ["O0"]) == 1
+    assert "unusable artifact handwritten.m3.O0.s" in (tmp_path / "report.md").read_text()
+
+
+def test_report_publishes_into_a_missing_matrix_dir(tmp_path: Path) -> None:
+    matrix = tmp_path / "never-built"
+    assert report(matrix, VARIANTS, ["m3"], ["O0"]) == 1
+    assert "❌ evidence incomplete" in (matrix / "report.md").read_text()
