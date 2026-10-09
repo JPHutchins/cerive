@@ -5,9 +5,11 @@
 #include "union.h"
 
 #ifndef CERIVE_IF_DECL
-#	if defined(__STDC_VERSION__) && __STDC_VERSION__ > 202311L
+#	if defined(__clang__)
+#		define CERIVE_IF_DECL 0
+#	elif defined(__GNUC__) && __GNUC__ >= 15
 #		define CERIVE_IF_DECL 1
-#	elif defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 15
+#	elif defined(__STDC_VERSION__) && __STDC_VERSION__ > 202311L
 #		define CERIVE_IF_DECL 1
 #	else
 #		define CERIVE_IF_DECL 0
@@ -34,8 +36,8 @@
 #	define CERIVE_P_NEEDS_IF_DECL \
 		static_assert( \
 			0, \
-			"cerive MATCH/CASE/if-let require N3356 if-declarations (gcc 15+, or -std=c2y); " \
-			"the rest of cerive is portable C23" \
+			"cerive MATCH/CASE/if-let require N3356 if-declarations; define CERIVE_IF_DECL 1 " \
+			"if this compiler has them. The rest of cerive is portable C23" \
 		)
 #	define CERIVE_MATCH(instance) CERIVE_P_NEEDS_IF_DECL
 #	define CERIVE_CASE(variant, bind) CERIVE_P_NEEDS_IF_DECL

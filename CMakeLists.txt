@@ -34,8 +34,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(VARIANTS cerive handwritten CACHE STRING "Struct-API implementations to compare")
 
+set(CERIVE_C_STD c23 CACHE STRING "C standard of the test build: c23 or c2y")
+set_property(CACHE CERIVE_C_STD PROPERTY STRINGS c23 c2y)
+if(CERIVE_C_STD STREQUAL "c2y")
+	set(STD_OPTS -std=c2y)
+elseif(NOT CERIVE_C_STD STREQUAL "c23")
+	message(FATAL_ERROR "CERIVE_C_STD is c23 or c2y, not ${CERIVE_C_STD}")
+endif()
+
 set(WARNINGS -Wall -Wextra -Werror -Wdouble-promotion)
-add_compile_options(${WARNINGS})
+add_compile_options(${WARNINGS} ${STD_OPTS})
 
 if(CMAKE_CROSSCOMPILING)
 	set(ARM_CPU cortex-m3 CACHE STRING "Cortex-M core for the QEMU test build")
@@ -54,11 +62,14 @@ else()
 	add_link_options(${PLATFORM_OPTS})
 	add_library(bsp INTERFACE)
 endif()
-target_compile_options(cerive PRIVATE ${WARNINGS} ${PLATFORM_OPTS})
+target_compile_options(cerive PRIVATE ${WARNINGS} ${STD_OPTS} ${PLATFORM_OPTS})
 
 include(CheckSourceCompiles)
-list(JOIN WARNINGS " " CMAKE_REQUIRED_FLAGS)
-check_source_compiles(C [[
+block()
+	unset(CMAKE_C_STANDARD)
+	unset(CMAKE_C_EXTENSIONS)
+	string(JOIN " " CMAKE_REQUIRED_FLAGS ${CMAKE_C23_STANDARD_COMPILE_OPTION} ${STD_OPTS} ${WARNINGS})
+	check_source_compiles(C [[
 int main(void) {
 	int const zero = 0;
 	if (int const * const bound = &zero)
@@ -66,7 +77,7 @@ int main(void) {
 	return 1;
 }
 ]] CERIVE_COMPILER_HAS_IF_DECL)
-unset(CMAKE_REQUIRED_FLAGS)
+endblock()
 set(IF_DECL_PROBED CERIVE_COMPILER_HAS_IF_DECL=$<BOOL:${CERIVE_COMPILER_HAS_IF_DECL}>)
 
 include(cmake/cstructs.cmake)
@@ -135,7 +146,7 @@ endforeach()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 	add_test(NAME clang_analyze
-		COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C23_STANDARD_COMPILE_OPTION} ${WARNINGS} -Qunused-arguments
+		COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C23_STANDARD_COMPILE_OPTION} ${STD_OPTS} ${WARNINGS} -Qunused-arguments
 			-I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/variants/cerive -D${IF_DECL_PROBED}
 			--analyze -Xclang -analyzer-output=text -Xclang -analyzer-werror
 			${CMAKE_SOURCE_DIR}/src/cerive.c

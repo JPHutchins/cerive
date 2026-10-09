@@ -17,8 +17,10 @@ C_BUILD_INPUTS = (
     "tasks.py",
 )
 HOST_COMPILERS = (
-    {"PKG": "gcc13", "CC": "gcc"},
-    {"PKG": "clang_18", "CC": "clang"},
+    {"PKG": "gcc13", "CC": "gcc", "STD": "c23"},
+    {"PKG": "clang_18", "CC": "clang", "STD": "c23"},
+    {"PKG": "gcc15", "CC": "gcc", "STD": "c2y"},
+    {"PKG": "clang_22", "CC": "clang", "STD": "c2y"},
 )
 
 c_sources = by_glob(
@@ -38,11 +40,11 @@ c = Sequential(cfg_arm, build, ctest, when=C_BUILD_INPUTS)
 evidence = Sequential(cfg_arm, build, ctest, build_evidence, when=C_BUILD_INPUTS)
 cfg_host = Task(
     "nix shell --inputs-from . nixpkgs#{PKG} --command"
-    " cmake --preset host -B build-host/{PKG} -DCMAKE_C_COMPILER={CC}"
+    " cmake --preset host -B build-host/{PKG}-{STD} -DCMAKE_C_COMPILER={CC} -DCERIVE_C_STD={STD}"
 )
-build_host = Task("cmake --build build-host/{PKG}")
+build_host = Task("cmake --build build-host/{PKG}-{STD}")
 ctest_host = Task(
-    "ctest --test-dir build-host/{PKG} --output-on-failure",
+    "ctest --test-dir build-host/{PKG}-{STD} --output-on-failure",
     agent_format=("--output-junit {report}", "junit"),
 )
 host = Parallel(
