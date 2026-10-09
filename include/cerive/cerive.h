@@ -14,7 +14,7 @@
 
 #define CERIVE_VERSION_MAJOR 0
 #define CERIVE_VERSION_MINOR 1
-#define CERIVE_VERSION_PATCH 0
+#define CERIVE_VERSION_PATCH 1
 
 #define CERIVE_P_drop_first(...) CERIVE_P_drop_first_(__VA_ARGS__)
 #define CERIVE_P_drop_first_(first, ...) __VA_ARGS__

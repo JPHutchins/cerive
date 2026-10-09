@@ -18,7 +18,7 @@ CERIVE_UNION(NeverCalledUnion, Debug, PartialEq, Ord, Hash)
 
 _Static_assert(CERIVE_VERSION_MAJOR == 0, "version major");
 _Static_assert(CERIVE_VERSION_MINOR == 1, "version minor");
-_Static_assert(CERIVE_VERSION_PATCH == 0, "version patch");
+_Static_assert(CERIVE_VERSION_PATCH == 1, "version patch");
 
 _Static_assert(CERIVE_IF_DECL == CERIVE_COMPILER_HAS_IF_DECL, "if-declaration detection");
 
