@@ -1,4 +1,4 @@
-#if defined(REJECT_MATCH_WITHOUT_IF_DECL)
+#if defined(REJECT_MATCH_WITHOUT_IF_DECL) || defined(REJECT_LET_WITHOUT_IF_DECL)
 #	define CERIVE_IF_DECL 0
 #endif
 
@@ -32,6 +32,13 @@ CERIVE(TwoArity, Struct)
 #elif defined(REJECT_NULL_DEBUG_BUFFER)
 int unit_debug_into_null(Unit const * const u) {
 	return Unit_debug(u, 1, NULL);
+}
+#elif defined(REJECT_LET_WITHOUT_IF_DECL)
+int either_x(Either const e) {
+	if LET(e, Unit, u) {
+		return u->x;
+	}
+	return 0;
 }
 #elif defined(REJECT_MULTIWORD_SCALAR)
 #	define Wide_FIELDS(X) X(long long, v)

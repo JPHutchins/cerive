@@ -36,6 +36,7 @@ set(VARIANTS cerive handwritten CACHE STRING "Struct-API implementations to comp
 
 set(CERIVE_C_STD c23 CACHE STRING "C standard of the test build: c23 or c2y")
 set_property(CACHE CERIVE_C_STD PROPERTY STRINGS c23 c2y)
+set(STD_OPTS)
 if(CERIVE_C_STD STREQUAL "c2y")
 	set(STD_OPTS -std=c2y)
 elseif(NOT CERIVE_C_STD STREQUAL "c23")
@@ -76,8 +77,9 @@ int main(void) {
 		return *bound;
 	return 1;
 }
-]] CERIVE_COMPILER_HAS_IF_DECL)
+]] CERIVE_COMPILER_HAS_IF_DECL_${CERIVE_C_STD})
 endblock()
+set(CERIVE_COMPILER_HAS_IF_DECL ${CERIVE_COMPILER_HAS_IF_DECL_${CERIVE_C_STD}})
 set(IF_DECL_PROBED CERIVE_COMPILER_HAS_IF_DECL=$<BOOL:${CERIVE_COMPILER_HAS_IF_DECL}>)
 
 include(cmake/cstructs.cmake)
@@ -127,12 +129,14 @@ set(REJECT_THIRTEEN_TRAITS_DIAGNOSTIC "macro [^ ]*CERIVE_P_over")
 set(REJECT_TWO_ARITY_POINTER_DIAGNOSTIC "macro [^ ]*CERIVE_P_require_registered_type")
 set(REJECT_MULTIWORD_SCALAR_DIAGNOSTIC "macro [^ ]*CERIVE_P_require_registered_type")
 set(REJECT_MATCH_WITHOUT_IF_DECL_DIAGNOSTIC "require N3356 if-declarations")
+set(REJECT_LET_WITHOUT_IF_DECL_DIAGNOSTIC "requires_N3356_if_declarations")
 set(REJECT_NULL_DEBUG_BUFFER_DIAGNOSTIC "nonnull]")
 foreach(rejected
 		THIRTEEN_TRAITS
 		TWO_ARITY_POINTER
 		MULTIWORD_SCALAR
 		MATCH_WITHOUT_IF_DECL
+		LET_WITHOUT_IF_DECL
 		NULL_DEBUG_BUFFER)
 	add_library(reject_${rejected} OBJECT EXCLUDE_FROM_ALL tests/test_rejects.c)
 	target_link_libraries(reject_${rejected} PRIVATE cerive)

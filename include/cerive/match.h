@@ -41,7 +41,7 @@
 		)
 #	define CERIVE_MATCH(instance) CERIVE_P_NEEDS_IF_DECL
 #	define CERIVE_CASE(variant, bind) CERIVE_P_NEEDS_IF_DECL
-#	define CERIVE_LET(instance, variant, bind) (cerive_if_let_requires_N3356_if_declarations)
+#	define CERIVE_LET(instance, variant, bind) (cerive_if_let_requires_N3356_if_declarations_or_define_CERIVE_IF_DECL_1)
 
 #endif
 
