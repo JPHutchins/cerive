@@ -27,29 +27,23 @@ c_sources = by_glob(
 )
 
 cfmt = Task("jphfmt --check {paths}", paths=c_sources)
-cfg_arm = Task("cmake --preset arm", mutates=True)
-build = Task("cmake --build build", mutates=True)
-ctest = Task(
-    "ctest --preset arm",
-    agent_format=("--output-junit {report}", "junit"),
-    mutates=True,
-)
-build_evidence = Task("cmake --build --preset evidence", mutates=True)
-cfg_analyze = Task("cmake --preset analyze", mutates=True)
-build_analyze = Task("cmake --build --preset analyze", mutates=True)
+cfg_arm = Task("cmake --preset arm")
+build = Task("cmake --build build")
+ctest = Task("ctest --preset arm", agent_format=("--output-junit {report}", "junit"))
+build_evidence = Task("cmake --build --preset evidence")
+cfg_analyze = Task("cmake --preset analyze")
+build_analyze = Task("cmake --build --preset analyze")
 analyze = Sequential(cfg_analyze, build_analyze, when=C_BUILD_INPUTS)
 c = Sequential(cfg_arm, build, ctest, when=C_BUILD_INPUTS)
 evidence = Sequential(cfg_arm, build, ctest, build_evidence, when=C_BUILD_INPUTS)
 cfg_host = Task(
     "nix shell --inputs-from . nixpkgs#{PKG} --command"
-    " cmake --preset host -B build-host/{PKG} -DCMAKE_C_COMPILER={CC}",
-    mutates=True,
+    " cmake --preset host -B build-host/{PKG} -DCMAKE_C_COMPILER={CC}"
 )
-build_host = Task("cmake --build build-host/{PKG}", mutates=True)
+build_host = Task("cmake --build build-host/{PKG}")
 ctest_host = Task(
     "ctest --test-dir build-host/{PKG} --output-on-failure",
     agent_format=("--output-junit {report}", "junit"),
-    mutates=True,
 )
 host = Parallel(
     Sequential(cfg_host, build_host, ctest_host),

@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    camas.url = "github:JPHutchins/camas/0.1.29";
+    camas.url = "github:JPHutchins/camas/0.1.30";
 
     jphfmt = {
       url = "github:JPHutchins/jphfmt/v0.3.0";

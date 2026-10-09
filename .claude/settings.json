@@ -1,25 +1,15 @@
 {
   "hooks": {
-    "PostToolBatch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uvx 'camas[mcp]==0.1.29' mcp fix || exit 0"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uvx 'camas[mcp]==0.1.29' mcp fix || exit 0"
+            "command": "camas mcp fix || exit 0"
           },
           {
             "type": "command",
-            "command": "uvx 'camas[mcp]==0.1.29' mcp gate --under 5s --nudge",
+            "command": "camas mcp gate --under 5s --nudge",
             "async": true,
             "asyncRewake": true
           }

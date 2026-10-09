@@ -19,7 +19,7 @@ dev = [
 "pyright>=1.1.408",
 "pytest>=8",
 "ruff>=0.12",
-"camas==0.1.29",
+"camas==0.1.30",
 ]
 
 [tool.hatch.build.targets.wheel]

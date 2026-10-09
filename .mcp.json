@@ -2,8 +2,8 @@
   "mcpServers": {
     "camas": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["camas[mcp]==0.1.29", "mcp"]
+      "command": "camas",
+      "args": ["mcp"]
     }
   }
 }

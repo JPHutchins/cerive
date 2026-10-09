@@ -5,16 +5,16 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1784939965,
-        "narHash": "sha256-bJiThpwncJqoBkCXU/QrxYtGnkSM/0f5hzyLOoD3orI=",
+        "lastModified": 1791517850,
+        "narHash": "sha256-EXg4K+AYwUTrm9jEw9WPFcThbpa6C0e5suUk3CIaEBE=",
         "owner": "JPHutchins",
         "repo": "camas",
-        "rev": "18aad057d46f1fda1e1aeb32fd234c0e7e86a782",
+        "rev": "91c1619612ea76b6cf934d17fafd69761c3dd9d7",
         "type": "github"
       },
       "original": {
         "owner": "JPHutchins",
-        "ref": "0.1.29",
+        "ref": "0.1.30",
         "repo": "camas",
         "type": "github"
       }
