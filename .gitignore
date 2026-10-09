@@ -1,5 +1,6 @@
 /build/
 /build-analyze/
+/build-host/
 /build-clang-analyze/
 result
 result-*

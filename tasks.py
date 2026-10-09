@@ -16,6 +16,10 @@ C_BUILD_INPUTS = (
     "flake.lock",
     "tasks.py",
 )
+HOST_COMPILERS = (
+    {"PKG": "gcc13", "CC": "gcc"},
+    {"PKG": "clang_18", "CC": "clang"},
+)
 
 c_sources = by_glob(
     C_GLOBS,
@@ -27,14 +31,27 @@ cfg_arm = Task("cmake --preset arm")
 build = Task("cmake --build build")
 ctest = Task("ctest --preset arm", agent_format=("--output-junit {report}", "junit"))
 build_evidence = Task("cmake --build --preset evidence")
-clang_analyze = Task("cmake --build build --target clang-analyze", when=C_BUILD_INPUTS)
 cfg_analyze = Task("cmake --preset analyze")
 build_analyze = Task("cmake --build --preset analyze")
 analyze = Sequential(cfg_analyze, build_analyze, when=C_BUILD_INPUTS)
 c = Sequential(cfg_arm, build, ctest, when=C_BUILD_INPUTS)
 evidence = Sequential(cfg_arm, build, ctest, build_evidence, when=C_BUILD_INPUTS)
+cfg_host = Task(
+    "nix shell --inputs-from . nixpkgs#{PKG} --command"
+    " cmake --preset host -B build-host/{PKG} -DCMAKE_C_COMPILER={CC}"
+)
+build_host = Task("cmake --build build-host/{PKG}")
+ctest_host = Task(
+    "ctest --test-dir build-host/{PKG} --output-on-failure",
+    agent_format=("--output-junit {report}", "junit"),
+)
+host = Parallel(
+    Sequential(cfg_host, build_host, ctest_host),
+    variants=HOST_COMPILERS,
+    when=C_BUILD_INPUTS,
+)
 nix = Task("nix flake check --print-build-logs", when=("flake.nix", "flake.lock"))
-check = Parallel(cfmt, evidence, analyze)
+check = Parallel(cfmt, evidence, analyze, host)
 fix = Task("jphfmt -i {paths}", paths=c_sources, mutates=True)
 default = Sequential(fix, check)
 

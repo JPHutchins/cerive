@@ -12,6 +12,7 @@ CERIVE(Unit, Struct, Debug)
 #define Either_VARIANTS(X) X(Unit)
 CERIVE_UNION(Either)
 
+#if CERIVE_IF_DECL || defined(REJECT_MATCH_WITHOUT_IF_DECL)
 int either_x(Either const e) {
 	MATCH(e) {
 		CASE(Unit, u) {
@@ -20,6 +21,7 @@ int either_x(Either const e) {
 	}
 	return 0;
 }
+#endif
 
 #if defined(REJECT_THIRTEEN_TRAITS)
 #	define Bounded_FIELDS(X) X(int32_t, x)

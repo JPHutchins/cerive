@@ -39,12 +39,12 @@
 #define CERIVE_P_init_const_record(type, name) .name = name,
 #define CERIVE_P_init_pointer(star, type, name) .name = name,
 #define CERIVE_Constructor(T) \
-	static inline T T##_new(CERIVE_P_drop_first(T##_FIELDS(CERIVE_P_param))) { \
+	[[maybe_unused]] static inline T T##_new(CERIVE_P_drop_first(T##_FIELDS(CERIVE_P_param))) { \
 		return (T){T##_FIELDS(CERIVE_P_init)}; \
 	}
 
 #define CERIVE_Default(T) \
-	static inline T T##_default(void) { return (T){}; }
+	[[maybe_unused]] static inline T T##_default(void) { return (T){}; }
 
 #define CERIVE_P_eq(...) CERIVE_P_dispatch(CERIVE_P_eq, __VA_ARGS__)
 #define CERIVE_P_eq_scalar(type, name) &&a->name == b->name
@@ -52,7 +52,7 @@
 #define CERIVE_P_eq_const_record(type, name) CERIVE_P_via_record(CERIVE_P_eq_record, type, name)
 #define CERIVE_P_eq_pointer(star, type, name) &&a->name == b->name
 #define CERIVE_PartialEq(T) \
-	__attribute__((nonnull(1, 2))) \
+	[[maybe_unused]] __attribute__((nonnull(1, 2))) \
 	static inline bool T##_eq( \
 		[[maybe_unused]] T const * const a, \
 		[[maybe_unused]] T const * const b \
@@ -85,7 +85,7 @@
 		} \
 	}
 #define CERIVE_Ord(T) \
-	__attribute__((nonnull(1, 2))) \
+	[[maybe_unused]] __attribute__((nonnull(1, 2))) \
 	static inline enum cerive_ordering T##_cmp( \
 		[[maybe_unused]] T const * const a, \
 		[[maybe_unused]] T const * const b \
@@ -100,7 +100,7 @@
 #define CERIVE_P_hash_const_record(type, name) CERIVE_P_via_record(CERIVE_P_hash_record, type, name)
 #define CERIVE_P_hash_pointer(star, type, name) hash = cerive_hash_bytes(hash, &self->name, sizeof self->name);
 #define CERIVE_Hash(T) \
-	__attribute__((nonnull(1))) \
+	[[maybe_unused]] __attribute__((nonnull(1))) \
 	static inline size_t T##_hash([[maybe_unused]] T const * const self) { \
 		size_t hash = cerive_hash_offset; \
 		T##_FIELDS(CERIVE_P_hash) \

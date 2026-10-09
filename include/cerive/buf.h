@@ -7,7 +7,7 @@ size_t cerive_buf_remaining(size_t const cap, int const off);
 char * cerive_buf_at(size_t const cap, char buf[static const cap], int const off);
 
 #define CERIVE_P_debug_signature(T) \
-	__attribute__((nonnull(1))) static inline int T##_debug( \
+	[[maybe_unused]] __attribute__((nonnull(1))) static inline int T##_debug( \
 		[[maybe_unused]] T const * const self, \
 		size_t const n, \
 		char buf[static const n] \

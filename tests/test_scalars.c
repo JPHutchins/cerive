@@ -358,7 +358,7 @@ static int scalar_float(void) {
 	CHECK(ScalarFloat_cmp(&s, &(ScalarFloat){.val = 1.5, .id = 9}) == cerive_greater);
 
 	CHECK(ScalarFloat_hash(&s) == ScalarFloat_hash(&(ScalarFloat){.val = 1.5, .id = 10}));
-	CHECK(ScalarFloat_hash(&s) != ScalarFloat_hash(&(ScalarFloat){.val = 0.0f, .id = 10}));
+	CHECK(ScalarFloat_hash(&s) != ScalarFloat_hash(&(ScalarFloat){.val = 0.0, .id = 10}));
 
 	char buf[64];
 	ScalarFloat_debug(&s, sizeof buf, buf);
