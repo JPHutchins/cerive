@@ -9,12 +9,12 @@
 	X(int64_t, b)
 CERIVE(CompileCheck, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 #define CompileUnion_VARIANTS(X) X(CompileCheck)
-CERIVE_UNION(CompileUnion, Debug, PartialEq)
+CERIVE_UNION(CompileUnion, Debug, PartialEq, Ord, Hash)
 
 #define NeverCalled_FIELDS(X) X(int32_t, v)
 CERIVE(NeverCalled, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 #define NeverCalledUnion_VARIANTS(X) X(NeverCalled)
-CERIVE_UNION(NeverCalledUnion, Debug, PartialEq)
+CERIVE_UNION(NeverCalledUnion, Debug, PartialEq, Ord, Hash)
 
 _Static_assert(CERIVE_VERSION_MAJOR == 0, "version major");
 _Static_assert(CERIVE_VERSION_MINOR == 1, "version minor");
@@ -48,4 +48,6 @@ __attribute__((used)) static void sanity(void) {
 	CompileUnion_debug(&u, sizeof buf, buf);
 	CompileUnion_debug_len(&u);
 	CompileUnion_eq(&u, &u);
+	CompileUnion_cmp(&u, &u);
+	CompileUnion_hash(&u);
 }

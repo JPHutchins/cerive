@@ -226,6 +226,51 @@ static int union_construct_and_compare(void) {
 	return fails;
 }
 
+static int union_order(void) {
+	int fails = 0;
+
+	Shape const point = Shape_new(Point, .x = 100, .y = 100);
+	Shape const line = Shape_new(Line, .a = Point_new(0, 0), .b = Point_new(0, 0));
+	Shape const frame = Shape_new(Frame, .edge = Line_default(), .id = 0);
+	CHECK(Shape_cmp(&point, &line) == cerive_less);
+	CHECK(Shape_cmp(&line, &frame) == cerive_less);
+	CHECK(Shape_cmp(&frame, &point) == cerive_greater);
+
+	Shape const low = Shape_new(Point, .x = 1, .y = 2);
+	Shape const high = Shape_new(Point, .x = 1, .y = 3);
+	CHECK(Shape_cmp(&low, &high) == cerive_less);
+	CHECK(Shape_cmp(&high, &low) == cerive_greater);
+	CHECK(Shape_cmp(&low, &Shape_new(Point, .x = 1, .y = 2)) == cerive_equal);
+	CHECK(
+		Shape_cmp(
+			&Shape_new(Line, .a = Point_new(0, 0), .b = Point_new(0, 1)),
+			&line
+		) == cerive_greater
+	);
+	CHECK(Shape_cmp(&frame, &Shape_new(Frame, .edge = Line_default(), .id = 1)) == cerive_less);
+
+	return fails;
+}
+
+static int union_hash(void) {
+	int fails = 0;
+
+	Shape const point = Shape_new(Point, .x = 1, .y = 2);
+	Shape const stale = {.Line = {.a = Point_new(1, 2), .b = Point_new(9, 9)}, .tag = Point_tag};
+	CHECK(Shape_eq(&point, &stale));
+	CHECK(Shape_hash(&point) == Shape_hash(&stale));
+	CHECK(Shape_hash(&point) != Shape_hash(&Shape_new(Point, .x = 1, .y = 3)));
+	CHECK(Shape_hash(&point) != Shape_hash(&Shape_new(Line, .a = Point_new(1, 2))));
+	CHECK(
+		Shape_hash(
+			&Shape_new(Line, .a = Point_new(3, 4))
+		) == Shape_hash(&Shape_new(Line, .a = Point_new(3, 4)))
+	);
+	CHECK(Shape_hash(&Shape_new(Frame, .id = 5)) != Shape_hash(&Shape_new(Frame, .id = 6)));
+
+	return fails;
+}
+
 #if CERIVE_IF_DECL
 static int union_match(void) {
 	int fails = 0;
@@ -305,6 +350,11 @@ static int many_variant_union(void) {
 	CHECK(Many_eq(&m0, &Many_new(Alpha, .val = 10)));
 	CHECK(!Many_eq(&m0, &Many_new(Alpha, .val = 99)));
 	CHECK(!Many_eq(&m0, &m1));
+
+	Many const same_payload = Many_new(Gamma, .val = 2.5);
+	CHECK(Beta_hash(&m1.Beta) == Gamma_hash(&same_payload.Gamma));
+	CHECK(Many_hash(&m1) != Many_hash(&same_payload));
+	CHECK(Many_cmp(&Many_new(Beta, .val = 9.0), &Many_new(Gamma, .val = 1.0)) == cerive_less);
 
 #	if CERIVE_IF_DECL
 	MATCH(m0) {
@@ -525,6 +575,8 @@ int main(void) {
 		+ nested_composition()
 		+ debug_buffer_contract()
 		+ union_construct_and_compare()
+		+ union_order()
+		+ union_hash()
 #if CERIVE_IF_DECL
 		+ union_match()
 #endif

@@ -15,19 +15,19 @@ CERIVE(Empty, Struct, Debug, Default, PartialEq, Ord, Hash)
 CERIVE(TripleP, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 
 #define Alpha_FIELDS(X) X(int32_t, val)
-CERIVE(Alpha, Struct, Debug, Default, PartialEq)
+CERIVE(Alpha, Struct, Debug, Default, PartialEq, Ord, Hash)
 
 #define Beta_FIELDS(X) X(double, val)
-CERIVE(Beta, Struct, Debug, Default, PartialEq)
+CERIVE(Beta, Struct, Debug, Default, PartialEq, Ord, Hash)
 
 #define Gamma_FIELDS(X) X(double, val)
-CERIVE(Gamma, Struct, Debug, Default, PartialEq)
+CERIVE(Gamma, Struct, Debug, Default, PartialEq, Ord, Hash)
 
 #define Delta_FIELDS(X) X(char, val)
-CERIVE(Delta, Struct, Debug, Default, PartialEq)
+CERIVE(Delta, Struct, Debug, Default, PartialEq, Ord, Hash)
 
 #define Epsilon_FIELDS(X) X(int64_t, val)
-CERIVE(Epsilon, Struct, Debug, Default, PartialEq)
+CERIVE(Epsilon, Struct, Debug, Default, PartialEq, Ord, Hash)
 
 #define Many_VARIANTS(X) \
 	X(Alpha) \
@@ -35,7 +35,7 @@ CERIVE(Epsilon, Struct, Debug, Default, PartialEq)
 	X(Gamma) \
 	X(Delta) \
 	X(Epsilon)
-CERIVE_UNION(Many, Debug, PartialEq)
+CERIVE_UNION(Many, Debug, PartialEq, Ord, Hash)
 #define Many_new(...) CERIVE_UNION_NEW(Many, __VA_ARGS__)
 
 #define Only_FIELDS(X) \
