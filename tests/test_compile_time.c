@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include <cerive/cerive.h>
+#include <cerive/match.h>
 
 #define CompileCheck_FIELDS(X) \
 	X(int32_t, a) \
@@ -10,9 +11,16 @@ CERIVE(CompileCheck, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 #define CompileUnion_VARIANTS(X) X(CompileCheck)
 CERIVE_UNION(CompileUnion, Debug, PartialEq)
 
+#define NeverCalled_FIELDS(X) X(int32_t, v)
+CERIVE(NeverCalled, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
+#define NeverCalledUnion_VARIANTS(X) X(NeverCalled)
+CERIVE_UNION(NeverCalledUnion, Debug, PartialEq)
+
 _Static_assert(CERIVE_VERSION_MAJOR == 0, "version major");
 _Static_assert(CERIVE_VERSION_MINOR == 1, "version minor");
 _Static_assert(CERIVE_VERSION_PATCH == 0, "version patch");
+
+_Static_assert(CERIVE_IF_DECL == CERIVE_COMPILER_HAS_IF_DECL, "if-declaration detection");
 
 _Static_assert(cerive_hash_offset != 0, "FNV offset non-zero");
 _Static_assert(cerive_hash_prime != 0, "FNV prime non-zero");

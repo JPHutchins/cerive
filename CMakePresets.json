@@ -15,6 +15,12 @@
       "inherits": "arm",
       "binaryDir": "${sourceDir}/build-analyze",
       "cacheVariables": { "CERIVE_ANALYZE": "ON" }
+    },
+    {
+      "name": "host",
+      "displayName": "Host compiler (Ninja, ASan + UBSan)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-host"
     }
   ],
   "buildPresets": [

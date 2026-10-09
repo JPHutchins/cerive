@@ -42,7 +42,7 @@
 #endif
 
 #define CERIVE_UNION_PartialEq(T) \
-	__attribute__((nonnull(1, 2))) \
+	[[maybe_unused]] __attribute__((nonnull(1, 2))) \
 	static inline bool T##_eq(T const * const a, T const * const b) { \
 		if (a->tag != b->tag) { \
 			return false; \

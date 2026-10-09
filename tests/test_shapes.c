@@ -226,6 +226,7 @@ static int union_construct_and_compare(void) {
 	return fails;
 }
 
+#if CERIVE_IF_DECL
 static int union_match(void) {
 	int fails = 0;
 
@@ -254,6 +255,7 @@ static int union_match(void) {
 
 	return fails;
 }
+#endif
 
 #if CERIVE_HAS_EXTRA_TYPES
 static int triple_pointer(void) {
@@ -304,6 +306,7 @@ static int many_variant_union(void) {
 	CHECK(!Many_eq(&m0, &Many_new(Alpha, .val = 99)));
 	CHECK(!Many_eq(&m0, &m1));
 
+#	if CERIVE_IF_DECL
 	MATCH(m0) {
 		CASE(Alpha, a) {
 			CHECK(a->val == 10);
@@ -321,6 +324,7 @@ static int many_variant_union(void) {
 			CHECK(!"should not reach");
 		}
 	}
+#	endif
 
 	return fails;
 }
@@ -391,6 +395,7 @@ static int debug_exact_buffer(void) {
 	return fails;
 }
 
+#	if CERIVE_IF_DECL
 static int match_with_break(void) {
 	int fails = 0;
 
@@ -419,6 +424,8 @@ static int match_with_break(void) {
 
 	return fails;
 }
+#	endif
+
 static int nested_union_variant(void) {
 	int fails = 0;
 
@@ -442,6 +449,7 @@ static int nested_union_variant(void) {
 
 	return fails;
 }
+#	if CERIVE_IF_DECL
 static int if_let(void) {
 	int fails = 0;
 
@@ -502,6 +510,7 @@ static int match_with_continue(void) {
 
 	return fails;
 }
+#	endif
 #endif
 
 int main(void) {
@@ -516,7 +525,9 @@ int main(void) {
 		+ nested_composition()
 		+ debug_buffer_contract()
 		+ union_construct_and_compare()
+#if CERIVE_IF_DECL
 		+ union_match()
+#endif
 #if CERIVE_HAS_EXTRA_TYPES
 		+ triple_pointer()
 		+ many_variant_union()
@@ -524,10 +535,12 @@ int main(void) {
 		+ nested_union()
 		+ ord_short_circuit_3fields()
 		+ debug_exact_buffer()
+		+ nested_union_variant()
+#	if CERIVE_IF_DECL
 		+ match_with_break()
 		+ match_with_continue()
-		+ nested_union_variant()
 		+ if_let()
+#	endif
 #endif
 		;
 
