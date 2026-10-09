@@ -50,7 +50,7 @@ int main(void) {
 
 | | |
 |---|---|
-| consume | [CMakeLists.txt](CMakeLists.txt) · [zephyr/module.yml](zephyr/module.yml) |
+| consume | [CMakeLists.txt](CMakeLists.txt) · [zephyr/module.yml](zephyr/module.yml) · `packages.default` in [flake.nix](flake.nix) |
 | usage | [tests/](tests/) |
 | tasks | `camas --list` · [tasks.py](tasks.py) |
 | toolchain | [flake.nix](flake.nix) |

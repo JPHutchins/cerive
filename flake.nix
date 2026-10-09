@@ -16,8 +16,28 @@
     let
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system nixpkgs.legacyPackages.${system});
+      header = builtins.readFile ./include/cerive/cerive.h;
+      versionPart = name: builtins.head (builtins.match ".*#define CERIVE_VERSION_${name} ([0-9]+)\n.*" header);
+      version = "${versionPart "MAJOR"}.${versionPart "MINOR"}.${versionPart "PATCH"}";
     in {
       packages = forAllSystems (system: pkgs: {
+        cerive = pkgs.stdenvNoCC.mkDerivation {
+          pname = "cerive";
+          inherit version;
+          src = pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [
+              ./CMakeLists.txt
+              ./Kconfig
+              ./LICENSE
+              ./include
+              ./src
+              ./zephyr/module.yml
+            ];
+          };
+          installPhase = "cp -r . $out";
+        };
+        default = self.packages.${system}.cerive;
         jphfmt = pkgs.rustPlatform.buildRustPackage {
           pname = "jphfmt";
           version = "0.3.0";
@@ -25,6 +45,26 @@
           cargoLock.lockFile = jphfmt + "/Cargo.lock";
         };
         camas = camas.packages.${system}.with-mcp;
+      });
+
+      checks = forAllSystems (system: pkgs: {
+        consumer = pkgs.stdenv.mkDerivation {
+          pname = "cerive-consumer";
+          inherit version;
+          src = pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [
+              ./tests/consumer
+              ./tests/test_shapes.c
+              ./tests/check.h
+              ./variants/cerive
+            ];
+          };
+          nativeBuildInputs = [ pkgs.cmake pkgs.ninja ];
+          cmakeDir = "../tests/consumer";
+          cmakeFlags = [ "-DCERIVE_DIR=${self.packages.${system}.cerive}" ];
+          doCheck = true;
+        };
       });
 
       devShells = forAllSystems (system: pkgs: {
