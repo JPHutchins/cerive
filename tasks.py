@@ -52,7 +52,10 @@ host = Parallel(
     variants=HOST_COMPILERS,
     when=C_BUILD_INPUTS,
 )
-nix = Task("nix flake check --print-build-logs", when=("flake.nix", "flake.lock"))
+nix = Task(
+    "nix flake check --print-build-logs",
+    when=(*C_BUILD_INPUTS, "Kconfig", "LICENSE", "zephyr"),
+)
 check = Parallel(cfmt, evidence, analyze, host)
 fix = Task("jphfmt -i {paths}", paths=c_sources, mutates=True)
 default = Sequential(fix, check)
