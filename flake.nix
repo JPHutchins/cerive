@@ -16,9 +16,16 @@
     let
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system nixpkgs.legacyPackages.${system});
-      header = builtins.readFile ./include/cerive/cerive.h;
-      versionPart = name: builtins.head (builtins.match ".*#define CERIVE_VERSION_${name} ([0-9]+)\n.*" header);
-      version = "${versionPart "MAJOR"}.${versionPart "MINOR"}.${versionPart "PATCH"}";
+      headerLines = builtins.filter builtins.isString (builtins.split "\n" (builtins.readFile ./include/cerive/cerive.h));
+      versionParts = builtins.listToAttrs (builtins.concatMap
+        (line:
+          let m = builtins.match "#define CERIVE_VERSION_(MAJOR|MINOR|PATCH) ([0-9]+)" line;
+          in if m == null then [ ] else [{ name = builtins.elemAt m 0; value = builtins.elemAt m 1; }])
+        headerLines);
+      version =
+        if versionParts ? MAJOR && versionParts ? MINOR && versionParts ? PATCH
+        then "${versionParts.MAJOR}.${versionParts.MINOR}.${versionParts.PATCH}"
+        else throw "cerive.h declares no complete CERIVE_VERSION_MAJOR/MINOR/PATCH";
     in {
       packages = forAllSystems (system: pkgs: {
         cerive = pkgs.stdenvNoCC.mkDerivation {
