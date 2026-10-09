@@ -3,7 +3,11 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   camas:
@@ -41,3 +45,28 @@ jobs:
           toolchains: arm-zephyr-eabi
       - run: west twister -T cerive/tests/zephyr -p qemu_cortex_m3 --inline-logs -v
       - run: grep -rF 'SUITE PASS - 100.00% [cerive]' twister-out
+  version-gate:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv run --project cmake/python --frozen --no-dev cstructs version-gate include/cerive/cerive.h
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [camas, zephyr, version-gate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/download-artifact@v7
+        with:
+          name: evidence-matrix
+          path: evidence-matrix
+      - run: uv run --project cmake/python --frozen --no-dev cstructs release-assets evidence-matrix assets
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: assets/*
+          generate_release_notes: true
