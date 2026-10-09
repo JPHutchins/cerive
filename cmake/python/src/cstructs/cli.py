@@ -2,6 +2,7 @@
 
 import subprocess
 import sys
+import tarfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, NamedTuple
@@ -11,6 +12,7 @@ from cyclopts import App, Parameter
 from cstructs.asm import canonical, parse_syms, split_functions
 from cstructs.expand import strip_system_headers
 from cstructs.readme import c_examples
+from cstructs.release import assets, gate, problem
 from cstructs.report import Gap, Key, Stem, parse_size, render_report
 
 app = App(name="cstructs", help="cerive build tooling.")
@@ -146,4 +148,35 @@ def capture(out: Path, *command: str) -> int:
         print(f"error: command failed with exit code {result.returncode}", file=sys.stderr)
         return result.returncode
     out.write_text(result.stdout, encoding="utf-8")
+    return 0
+
+
+type Tag = Annotated[str, Parameter(env_var="GITHUB_REF_NAME")]
+
+
+@app.command
+def version_gate(header: Path, tag: Tag) -> int:
+    """Gate a release tag on the version in cerive.h."""
+    text = _read(header)
+    reason = problem(gate(text, tag)) if text is not None else f"cannot read {header}"
+    if reason is not None:
+        print(f"::error::{reason}")
+        return 1
+    print(f"{header} declares {tag}")
+    return 0
+
+
+@app.command
+def release_assets(matrix_dir: Path, out: Path, tag: Tag) -> int:
+    """Write the evidence assets of a release to OUT."""
+    evidence = _read(matrix_dir / "report.md")
+    if evidence is None:
+        print(f"::error::no evidence report in {matrix_dir}")
+        return 1
+    names = assets(tag)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / names.report).write_text(evidence, encoding="utf-8")
+    with tarfile.open(out / names.matrix, "w:gz") as archive:
+        archive.add(matrix_dir, arcname=names.matrix.removesuffix(".tar.gz"))
+    print(f"wrote {out / names.report} and {out / names.matrix}")
     return 0

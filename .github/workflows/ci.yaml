@@ -50,10 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          version=$(sed -nE 's/^#define CERIVE_VERSION_(MAJOR|MINOR|PATCH) ([0-9]+)$/\2/p' include/cerive/cerive.h | paste -sd.)
-          test "v${version}" = "${GITHUB_REF_NAME}" \
-            || { echo "::error::cerive.h is v${version}, tag is ${GITHUB_REF_NAME}"; exit 1; }
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv run --project cmake/python --frozen --no-dev cstructs version-gate include/cerive/cerive.h
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [camas, zephyr, version-gate]
@@ -61,14 +59,13 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
       - uses: actions/download-artifact@v7
         with:
           name: evidence-matrix
           path: evidence-matrix
-      - run: |
-          mkdir assets
-          cp evidence-matrix/report.md "assets/cerive-${GITHUB_REF_NAME}-evidence.md"
-          tar -czf "assets/cerive-${GITHUB_REF_NAME}-evidence-matrix.tar.gz" -C evidence-matrix .
+      - run: uv run --project cmake/python --frozen --no-dev cstructs release-assets evidence-matrix assets
       - uses: softprops/action-gh-release@v3
         with:
           files: assets/*
