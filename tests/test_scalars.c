@@ -61,7 +61,7 @@ CERIVE(ScalarU64, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 CERIVE(ScalarSize, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 
 #define ScalarFloat_FIELDS(X) \
-	X(double, val) \
+	X(float, val) \
 	X(int32_t, id)
 CERIVE(ScalarFloat, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 
@@ -348,21 +348,21 @@ static int scalar_size(void) {
 static int scalar_float(void) {
 	int fails = 0;
 
-	ScalarFloat const s = ScalarFloat_new(1.5, 10);
-	CHECK(s.val == 1.5 && s.id == 10);
+	ScalarFloat const s = ScalarFloat_new(1.5f, 10);
+	CHECK(s.val == 1.5f && s.id == 10);
 
-	CHECK(ScalarFloat_eq(&s, &(ScalarFloat){.val = 1.5, .id = 10}));
-	CHECK(!ScalarFloat_eq(&s, &(ScalarFloat){.val = 1.5, .id = 11}));
+	CHECK(ScalarFloat_eq(&s, &(ScalarFloat){.val = 1.5f, .id = 10}));
+	CHECK(!ScalarFloat_eq(&s, &(ScalarFloat){.val = 1.5f, .id = 11}));
 
-	CHECK(ScalarFloat_cmp(&s, &(ScalarFloat){.val = 1.5, .id = 10}) == cerive_equal);
-	CHECK(ScalarFloat_cmp(&s, &(ScalarFloat){.val = 1.5, .id = 9}) == cerive_greater);
+	CHECK(ScalarFloat_cmp(&s, &(ScalarFloat){.val = 1.5f, .id = 10}) == cerive_equal);
+	CHECK(ScalarFloat_cmp(&s, &(ScalarFloat){.val = 1.5f, .id = 9}) == cerive_greater);
 
-	CHECK(ScalarFloat_hash(&s) == ScalarFloat_hash(&(ScalarFloat){.val = 1.5, .id = 10}));
-	CHECK(ScalarFloat_hash(&s) != ScalarFloat_hash(&(ScalarFloat){.val = 0.0, .id = 10}));
+	CHECK(ScalarFloat_hash(&s) == ScalarFloat_hash(&(ScalarFloat){.val = 1.5f, .id = 10}));
+	CHECK(ScalarFloat_hash(&s) != ScalarFloat_hash(&(ScalarFloat){.val = 0.0f, .id = 10}));
 
 	char buf[64];
 	ScalarFloat_debug(&s, sizeof buf, buf);
-	CHECK(strstr(buf, "ScalarFloat {") == buf);
+	CHECK(strcmp(buf, "ScalarFloat { val=1.5 id=10 }") == 0);
 
 	return fails;
 }
@@ -384,7 +384,7 @@ static int scalar_double(void) {
 
 	char buf[64];
 	ScalarDouble_debug(&s, sizeof buf, buf);
-	CHECK(strstr(buf, "ScalarDouble {") == buf);
+	CHECK(strcmp(buf, "ScalarDouble { val=2.5 id=11 }") == 0);
 
 	return fails;
 }
