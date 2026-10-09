@@ -110,7 +110,7 @@
 #define CERIVE_P_debug(...) CERIVE_P_dispatch(CERIVE_P_debug, __VA_ARGS__)
 #define CERIVE_P_debug_scalar(type, name) \
 	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), \
-		#name "=" CERIVE_P_scalar_format(type) " ", self->name);
+		#name "=" CERIVE_P_scalar_format(type) " ", CERIVE_P_scalar_printed_value(type, self->name));
 #define CERIVE_P_debug_record(type, name) \
 	off += snprintf(cerive_buf_at(n, buf, off), cerive_buf_remaining(n, off), #name "="); \
 	off += type##_debug(&self->name, cerive_buf_remaining(n, off), cerive_buf_at(n, buf, off)); \

@@ -4,7 +4,10 @@
 
 #include "each.h"
 
-#define CERIVE_P_scalar(format, type) format, 1, type,
+#define CERIVE_P_scalar(format, type) CERIVE_P_scalar_printed(format, type, CERIVE_P_printed_as_is)
+#define CERIVE_P_scalar_printed(format, type, printed) format, 1, type, printed,
+#define CERIVE_P_printed_as_is(value) value
+#define CERIVE_P_printed_as_double(value) (double) (value)
 #define CERIVE_P_scalar_bool CERIVE_P_scalar("%d", bool)
 #define CERIVE_P_scalar_char CERIVE_P_scalar("%c", char)
 #define CERIVE_P_scalar_int8_t CERIVE_P_scalar("%" PRId8, int8_t)
@@ -16,7 +19,7 @@
 #define CERIVE_P_scalar_uint32_t CERIVE_P_scalar("%" PRIu32, uint32_t)
 #define CERIVE_P_scalar_uint64_t CERIVE_P_scalar("%" PRIu64, uint64_t)
 #define CERIVE_P_scalar_size_t CERIVE_P_scalar("%zu", size_t)
-#define CERIVE_P_scalar_float CERIVE_P_scalar("%g", float)
+#define CERIVE_P_scalar_float CERIVE_P_scalar_printed("%g", float, CERIVE_P_printed_as_double)
 #define CERIVE_P_scalar_double CERIVE_P_scalar("%g", double)
 #define CERIVE_P_scalar_int CERIVE_P_scalar("%d", int)
 #define CERIVE_P_scalar_unsigned CERIVE_P_scalar("%u", unsigned)
@@ -34,6 +37,14 @@
 #define CERIVE_P_scalar_format(type) CERIVE_P_scalar_format_(CERIVE_P_scalar_##type)
 #define CERIVE_P_scalar_format_(...) CERIVE_P_scalar_format__(__VA_ARGS__)
 #define CERIVE_P_scalar_format__(format, ...) format
+#define CERIVE_P_scalar_printed_value(type, value) CERIVE_P_scalar_printed_value_( \
+	value, \
+	CERIVE_P_scalar_##type \
+)
+#define CERIVE_P_scalar_printed_value_(...) CERIVE_P_scalar_printed_value__(__VA_ARGS__)
+#define CERIVE_P_scalar_printed_value__(value, format, flag, registered, printed, ...) printed( \
+	value \
+)
 
 #define const_CERIVE_P_unconst
 #define CERIVE_P_strip_const(type) CERIVE_P_cat(type, _CERIVE_P_unconst)

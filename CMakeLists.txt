@@ -43,7 +43,7 @@ if(CMAKE_CROSSCOMPILING)
 	set(PLATFORM_OPTS -mcpu=${ARM_CPU} -mthumb -ffunction-sections -fdata-sections)
 	add_compile_options(${PLATFORM_OPTS})
 	add_link_options(-mcpu=${ARM_CPU} -mthumb
-		-nostartfiles -Wl,--gc-sections --specs=nano.specs
+		-nostartfiles -Wl,--gc-sections --specs=nano.specs -Wl,-u,_printf_float
 		-T ${CMAKE_SOURCE_DIR}/bsp/lm3s6965.ld)
 	add_library(bsp OBJECT bsp/startup.c bsp/syscalls.c)
 	find_program(QEMU qemu-system-arm REQUIRED)
