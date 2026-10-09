@@ -66,6 +66,7 @@ int main(void) {
 	return 1;
 }
 ]] CERIVE_COMPILER_HAS_IF_DECL)
+unset(CMAKE_REQUIRED_FLAGS)
 set(IF_DECL_PROBED CERIVE_COMPILER_HAS_IF_DECL=$<BOOL:${CERIVE_COMPILER_HAS_IF_DECL}>)
 
 include(cmake/cstructs.cmake)
@@ -142,6 +143,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 			${CMAKE_SOURCE_DIR}/tests/test_scalars.c
 			${CMAKE_SOURCE_DIR}/tests/test_compile_time.c
 			${CMAKE_SOURCE_DIR}/study/study.c)
+	set_tests_properties(clang_analyze PROPERTIES TIMEOUT 120)
 endif()
 
 if(CMAKE_CROSSCOMPILING)

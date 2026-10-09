@@ -29,7 +29,11 @@ c_sources = by_glob(
 cfmt = Task("jphfmt --check {paths}", paths=c_sources)
 cfg_arm = Task("cmake --preset arm", mutates=True)
 build = Task("cmake --build build", mutates=True)
-ctest = Task("ctest --preset arm", agent_format=("--output-junit {report}", "junit"))
+ctest = Task(
+    "ctest --preset arm",
+    agent_format=("--output-junit {report}", "junit"),
+    mutates=True,
+)
 build_evidence = Task("cmake --build --preset evidence", mutates=True)
 cfg_analyze = Task("cmake --preset analyze", mutates=True)
 build_analyze = Task("cmake --build --preset analyze", mutates=True)
@@ -45,6 +49,7 @@ build_host = Task("cmake --build build-host/{PKG}", mutates=True)
 ctest_host = Task(
     "ctest --test-dir build-host/{PKG} --output-on-failure",
     agent_format=("--output-junit {report}", "junit"),
+    mutates=True,
 )
 host = Parallel(
     Sequential(cfg_host, build_host, ctest_host),

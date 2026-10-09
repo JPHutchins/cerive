@@ -11,6 +11,11 @@ CERIVE(CompileCheck, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 #define CompileUnion_VARIANTS(X) X(CompileCheck)
 CERIVE_UNION(CompileUnion, Debug, PartialEq)
 
+#define NeverCalled_FIELDS(X) X(int32_t, v)
+CERIVE(NeverCalled, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
+#define NeverCalledUnion_VARIANTS(X) X(NeverCalled)
+CERIVE_UNION(NeverCalledUnion, Debug, PartialEq)
+
 _Static_assert(CERIVE_VERSION_MAJOR == 0, "version major");
 _Static_assert(CERIVE_VERSION_MINOR == 1, "version minor");
 _Static_assert(CERIVE_VERSION_PATCH == 0, "version patch");
