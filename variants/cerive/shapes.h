@@ -34,5 +34,5 @@ CERIVE(Boxed, Struct, Debug, Constructor, Default, PartialEq, Ord, Hash)
 	X(Point) \
 	X(Line) \
 	X(Frame)
-CERIVE_UNION(Shape, Debug, PartialEq)
+CERIVE_UNION(Shape, Debug, PartialEq, Ord, Hash)
 #define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)

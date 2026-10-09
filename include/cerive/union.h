@@ -6,7 +6,9 @@
 
 #include "buf.h"
 #include "each.h"
+#include "hash.h"
 #include "new.h"
+#include "ord.h"
 
 #define CERIVE_P_union_over(map, T) T##_VARIANTS(map)
 #define CERIVE_P_union_tag(variant) variant##_tag,
@@ -17,6 +19,12 @@
 #define CERIVE_P_union_eq_case(variant) \
 	case variant##_tag: \
 		return variant##_eq(&a->variant, &b->variant);
+#define CERIVE_P_union_cmp_case(variant) \
+	case variant##_tag: \
+		return variant##_cmp(&a->variant, &b->variant);
+#define CERIVE_P_union_hash_case(variant) \
+	case variant##_tag: \
+		return cerive_hash_mix(hash, variant##_hash(&self->variant));
 
 #define CERIVE_P_union_def(T) \
 	enum T##_tag : uint8_t { CERIVE_P_union_over(CERIVE_P_union_tag, T) }; \
@@ -49,6 +57,31 @@
 		} \
 		switch (a->tag) { \
 			CERIVE_P_union_over(CERIVE_P_union_eq_case, T) \
+		} \
+		unreachable(); \
+	}
+
+#define CERIVE_UNION_Ord(T) \
+	[[maybe_unused]] __attribute__((nonnull(1, 2))) \
+	static inline enum cerive_ordering T##_cmp(T const * const a, T const * const b) { \
+		{ \
+			enum cerive_ordering const order = (a->tag > b->tag) - (a->tag < b->tag); \
+			if (order != cerive_equal) { \
+				return order; \
+			} \
+		} \
+		switch (a->tag) { \
+			CERIVE_P_union_over(CERIVE_P_union_cmp_case, T) \
+		} \
+		unreachable(); \
+	}
+
+#define CERIVE_UNION_Hash(T) \
+	[[maybe_unused]] __attribute__((nonnull(1))) \
+	static inline size_t T##_hash(T const * const self) { \
+		size_t const hash = cerive_hash_bytes(cerive_hash_offset, &self->tag, sizeof self->tag); \
+		switch (self->tag) { \
+			CERIVE_P_union_over(CERIVE_P_union_hash_case, T) \
 		} \
 		unreachable(); \
 	}

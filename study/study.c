@@ -101,3 +101,9 @@ int study_shape_debug_len(Shape const * const s) {
 bool study_shape_eq(Shape const * const a, Shape const * const b) {
 	return Shape_eq(a, b);
 }
+enum cerive_ordering study_shape_cmp(Shape const * const a, Shape const * const b) {
+	return Shape_cmp(a, b);
+}
+size_t study_shape_hash(Shape const * const s) {
+	return Shape_hash(s);
+}

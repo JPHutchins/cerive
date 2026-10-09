@@ -405,5 +405,37 @@ __attribute__((nonnull(1, 2))) static inline bool Shape_eq(
 	}
 	unreachable();
 }
+__attribute__((nonnull(1, 2))) static inline enum cerive_ordering Shape_cmp(
+	Shape const * const a,
+	Shape const * const b
+) {
+	{
+		enum cerive_ordering const o = (a->tag > b->tag) - (a->tag < b->tag);
+		if (o != cerive_equal) {
+			return o;
+		}
+	}
+	switch (a->tag) {
+		case Point_tag:
+			return Point_cmp(&a->Point, &b->Point);
+		case Line_tag:
+			return Line_cmp(&a->Line, &b->Line);
+		case Frame_tag:
+			return Frame_cmp(&a->Frame, &b->Frame);
+	}
+	unreachable();
+}
+__attribute__((nonnull(1))) static inline size_t Shape_hash(Shape const * const self) {
+	size_t const h = cerive_hash_bytes(cerive_hash_offset, &self->tag, sizeof self->tag);
+	switch (self->tag) {
+		case Point_tag:
+			return cerive_hash_mix(h, Point_hash(&self->Point));
+		case Line_tag:
+			return cerive_hash_mix(h, Line_hash(&self->Line));
+		case Frame_tag:
+			return cerive_hash_mix(h, Frame_hash(&self->Frame));
+	}
+	unreachable();
+}
 
 #define Shape_new(...) CERIVE_UNION_NEW(Shape, __VA_ARGS__)
